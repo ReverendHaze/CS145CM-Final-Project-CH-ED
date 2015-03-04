@@ -17,7 +17,7 @@ CHICAGO_BOX = [ -87.94, 41.64,  -87.52, 42.02]
 LA_BOX      = [-118.67, 33.70, -118.16, 34.34]
 HOUSTON_BOX = [ -95.79, 29.52,  -95.01, 30.11]
 
-WINDOW_LENGTH_IN_SEC = 600 #Seconds in a storage window
+WINDOW_LENGTH_IN_SEC = 30 #Seconds in a storage window
 
 #This is a basic listener that just prints received tweets to stdout.
 class TweetListener(StreamListener):
@@ -65,7 +65,8 @@ def TweetsToDF(tweets):
 if __name__ == '__main__':
 #This handles Twitter authetification and the connection to Twitter Streaming API
     listener = TweetListener()
-    auth_dict = pickle.load('credentials.pickle')
+    with open('credentials.pickle', 'rb') as f:
+        auth_dict = pickle.load(f)
     auth = OAuthHandler(auth_dict['consumer_key'], auth_dict['consumer_secret'])
     auth.set_access_token(auth_dict['access_token'], auth_dict['access_token_secret'])
     stream = Stream(auth = auth, listener = listener)
