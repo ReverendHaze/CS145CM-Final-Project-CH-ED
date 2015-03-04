@@ -5,12 +5,13 @@ import json
 import pandas as pd
 import pickle
 import glob
+import time
 
 RESULTS_FOLDER = 'out'
 
 def TweetsToDF(tweets):
     tweets_dict = {}
-    tweet_params = ['id', 'text', 'retweeted']
+    tweet_params = ['id', 'text', 'retweeted', 'created_at']
     user_params = ['id', 'followers_count', 'statuses_count', \
                    'friends_count', 'lang']
     for param in tweet_params:
