@@ -5,8 +5,9 @@ import json
 import pandas as pd
 import pickle
 import glob
+import datetime
 
-RESULTS_FOLDER = 'out'
+RESULTS_FOLDER = '../out'
 
 def TweetsToDF(tweets):
     tweets_dict = {}
@@ -24,6 +25,7 @@ def TweetsToDF(tweets):
     tweets_dict['latitude'], tweets_dict['longitude'] = \
             zip(*list(map(GetCoords, tweets)))
     tweets_dict['hashtags'] = list(map(GetHashtags, tweets))
+    tweets_dict['timestamp'] = list(map(GetTimestamp, tweets))
     return pd.DataFrame(tweets_dict, index=tweets_dict['id'])
 
 def GetCoords(tweet):
@@ -31,6 +33,9 @@ def GetCoords(tweet):
         return tuple(tweet['coordinates']['coordinates'])
     except:
         return (None,None)
+
+def GetTimestamp(tweet):
+    return str(datetime.datetime.strptime(tweet['created_at'], '%a %b %d %H:%M:%S %z %Y').total_seconds())
 
 def GetHashtags(tweet):
     try:
