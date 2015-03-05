@@ -17,7 +17,7 @@ CHICAGO_BOX = [ -87.94, 41.64,  -87.52, 42.02]
 LA_BOX      = [-118.67, 33.70, -118.16, 34.34]
 HOUSTON_BOX = [ -95.79, 29.52,  -95.01, 30.11]
 
-WINDOW_LENGTH_IN_SEC = 30 #Seconds in a storage window
+WINDOW_LENGTH_IN_SEC = 600 #Seconds in a storage window
 
 #This is a basic listener that just prints received tweets to stdout.
 class TweetListener(StreamListener):
@@ -27,6 +27,10 @@ class TweetListener(StreamListener):
     def __init__(self):
         self.ts = datetime.datetime.now()
 
+    # When we receive data, we calculate the difference in timestamp between the
+    # current time and the stored value. If it's greater than the window length,
+    # we store the current list of tweets and empty it out to start again.
+    # Regardless, we then append the new tweet to the list.
     def on_data(self, data):
         t_diff = datetime.datetime.now() - self.ts
         if(t_diff.total_seconds() > WINDOW_LENGTH_IN_SEC):
@@ -43,24 +47,6 @@ class TweetListener(StreamListener):
 
     def on_error(self, status):
         print(status)
-
-def TweetsToDF(tweets):
-    tweets_dict = {}
-    tweets_dict['text'] = map(lambda x: x['text'], tweets)
-    tweets_dict['id_num'] = map(lambda x: x['id'], tweets)
-    tweets_dict['hashtags'] = map(lambda x: ','.join(x['entities']['hashtags']), tweets)
-    tweets_dict['mentions'] = map(lambda x: ','.join(x['entities']['user_mentions']), tweets)
-    tweets_dict['retweeted'] = map(lambda x: x['retweeted'], tweets)
-    tweets_dict['coords'] = map(lambda x: x['coordinates'], tweets)
-    tweets_dict['u_id'] = map(lambda x: x['user']['id'], tweets)
-    tweets_dict['u_follow'] = map(lambda x: x['user']['followers_count'], tweets)
-    tweets_dict['u_stat'] = map(lambda x: x['user']['statuses_count'], tweets)
-    tweets_dict['u_friends'] = map(lambda x: x['user']['friends_count'], tweets)
-    tweets_dict['u_lang'] = map(lambda x: x['user']['lang'], tweets)
-    tweets_dict['geo'] = map(lambda x: x['geo'], tweets)
-    tweets_dict['place'] = map(lambda x: x['place'], tweets)
-    return pd.DataFrame(tweets_dict)
-
 
 if __name__ == '__main__':
 #This handles Twitter authetification and the connection to Twitter Streaming API
