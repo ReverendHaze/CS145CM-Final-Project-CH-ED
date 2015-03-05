@@ -6,8 +6,8 @@ import pickle
 import time
 from matplotlib import pyplot as plt
 
-RESULTS_FOLDER = 'out'
-WIN_SIZE_SEC = 15
+RESULTS_FOLDER = '../out'
+WIN_SIZE_SEC = 60*30
 
 #Get the timestamps of each message collapsed at a resolution of 'res' seconds
 def GetTS(ts, res):
