@@ -7,7 +7,7 @@ import pickle
 import glob
 import time
 
-RESULTS_FOLDER = '../out'
+RESULTS_FOLDER = 'out'
 
 def TweetsToDF(tweets):
     tweets_dict = {}
