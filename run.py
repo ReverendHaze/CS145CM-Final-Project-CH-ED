@@ -7,6 +7,7 @@ import os
 # Our modules
 import pickle_to_df
 import graph_freqs
+import graph_hexbin
 
 # Code to execute when the script is run
 def main():
@@ -20,9 +21,14 @@ def main():
         master_df = pickle.load(f)
 
     # Graph the number of tweets per minute over all data
-    graph_filename = '{}/graph/tweets_per_min.png'.format(output_folder)
+    graph_filename = '{}/freq/tweets_per_min.png'.format(output_folder)
     mkdir(graph_filename)
     graph_freqs.GraphFreqs(master_df, graph_filename)
+
+    # Graph the number of tweets within each part of each city
+    graph_filename = '{}/hex/tweets_by_region.png'.format(output_folder)
+    mkdir(graph_filename)
+    graph_hexbin.GraphCityHexbin(master_df, '[City]', graph_filename)
 
 # Helper function to make the directory to a file
 # First extracts the directory of the file, then
