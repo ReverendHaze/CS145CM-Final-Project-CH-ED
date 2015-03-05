@@ -33,6 +33,7 @@ def GraphFreqs(master_df, output_filename):
     ax.set_ylabel('Tweets per minute')
     fig = ax.get_figure()
     fig.savefig(output_filename)
+    plt.clf()
 
 #Get the timestamps of each message collapsed at a resolution of 'res' seconds
 def GetTS(ts, res):

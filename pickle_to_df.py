@@ -33,10 +33,11 @@ def TweetsToDF(tweets):
 
     #Handle coordinates and hashtags separately since they require different \
     #parsing
-    tweets_dict['latitude'], tweets_dict['longitude'] = \
+    tweets_dict['longitude'], tweets_dict['latitude'] = \
             zip(*list(map(GetCoords, tweets)))
     tweets_dict['hashtags'] = list(map(GetHashtags, tweets))
-    tweets_dict['timestamp'] = list(map(GetTimestamp, tweets))
+
+    #Filter out those tweets we got that aren't in a box
     return pd.DataFrame(tweets_dict, index=tweets_dict['id'])
 
 def GetCoords(tweet):
@@ -44,9 +45,6 @@ def GetCoords(tweet):
         return tuple(tweet['coordinates']['coordinates'])
     except:
         return (None,None)
-
-def GetTimestamp(tweet):
-    return str(datetime.datetime.strptime(tweet['created_at'], '%a %b %d %H:%M:%S %z %Y').total_seconds())
 
 def GetHashtags(tweet):
     try:
