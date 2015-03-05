@@ -14,7 +14,7 @@ RESULTS_FOLDER = 'out'
 #All boxes are of the form W:S:E:N with all values given in
 #longitude/latitude. Boxes returned from the google maps API.
 CHICAGO_BOX = [ -87.94, 41.64,  -87.52, 42.02]
-LA_BOX      = [-118.67, 33.70, -118.16, 34.34]
+LA_BOX      = [-118.66, 33.70, -118.16, 34.34]
 HOUSTON_BOX = [ -95.79, 29.52,  -95.01, 30.11]
 
 WINDOW_LENGTH_IN_SEC = 600 #Seconds in a storage window
