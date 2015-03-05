@@ -1,13 +1,23 @@
-#! /bin/python
-
 #Import the necessary methods and libraries
-import json
 import pandas as pd
 import pickle
 import glob
-import time
 
-RESULTS_FOLDER = 'out'
+def CreateDF(master_filename):
+    output_folder = master_filename.split('/')[0]
+    in_files = glob.glob('{}/*.pickle'.format(output_folder))
+    try:
+        in_files.remove(master_filename)
+    except:
+        pass
+    dfs = []
+    for twt_file in in_files:
+        with open(twt_file, 'rb') as f:
+            df = TweetsToDF(pickle.load(f))
+            dfs.append(df)
+    master_df = pd.concat(dfs)
+    with open(master_filename, 'wb+') as f:
+        pickle.dump(master_df, f)
 
 def TweetsToDF(tweets):
     tweets_dict = {}
@@ -38,20 +48,4 @@ def GetHashtags(tweet):
         return ','.join(list(map(lambda x: x['text'], tweet['entities']['hashtags'])))
     except:
         return None
-
-if __name__ == '__main__':
-    in_files = glob.glob('{}/*.pickle'.format(RESULTS_FOLDER))
-    try:
-        in_files.remove('{}/master.pickle'.format(RESULTS_FOLDER))
-    except:
-        pass
-    dfs = []
-    for twt_file in in_files:
-        with open(twt_file, 'rb') as f:
-            df = TweetsToDF(pickle.load(f))
-            dfs.append(df)
-    master_df = pd.concat(dfs)
-    print(master_df.head())
-    with open('{}/master.pickle'.format(RESULTS_FOLDER), 'wb+') as f:
-        pickle.dump(master_df, f)
 

@@ -27,6 +27,10 @@ class TweetListener(StreamListener):
     def __init__(self):
         self.ts = datetime.datetime.now()
 
+    # When we receive data, we calculate the difference in timestamp between the
+    # current time and the stored value. If it's greater than the window length,
+    # we store the current list of tweets and empty it out to start again.
+    # Regardless, we then append the new tweet to the list.
     def on_data(self, data):
         t_diff = datetime.datetime.now() - self.ts
         if(t_diff.total_seconds() > WINDOW_LENGTH_IN_SEC):
