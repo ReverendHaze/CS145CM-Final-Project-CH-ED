@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import time
 from matplotlib import pyplot as plt
+from mpl_toolkits.basemap import Basemap
 plt.style.use('ggplot')
 
 # Simple graphing module to output a graph of the number of tweets by minute
@@ -64,3 +65,5 @@ def GraphClusteredHexbin(df, centers, output_folder, city):
     plt.savefig('{}/hexmap_{}'.format(output_folder, city))
     plt.clf()
 
+def CreateMercMap(latmin, lonmin, latmax, lonmax)
+    return Basemap(projection='merc', llcrnrlat=latmin, llcrnrlon=lonmin, urcrnrlat=latmax, urcrnrlon=lonmax, lat_ts=1)
