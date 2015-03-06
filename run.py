@@ -31,7 +31,7 @@ def main():
 
     # (Uncomment/Comment) to (restore/remove) datapoints outside of the
     # three desired cities from the dataset.
-    #master_df = master_df[master_df['City'] != 'Other']
+    master_df = master_df[master_df['City'] != 'Other']
 
     for index, df in master_df.groupby('City'):
         # Graph tweet rate over time

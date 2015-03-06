@@ -51,8 +51,11 @@ def GraphClusteredHexbin(df, centers, output_folder, city):
     lonmin = df['longitude'].min()
     lonmax = df['longitude'].max()
 
-    plt.hexbin(df['longitude'], df['latitude'], bins='log', cmap=plt.cm.YlOrRd_r, alpha=1.0, gridsize=100)
-    plt.axis([lonmin, lonmax, latmin, latmax])
+    #plt.hexbin(df['longitude'], df['latitude'], bins='log', cmap=plt.cm.YlOrRd_r, alpha=1.0, gridsize=100)
+    #plt.axis([lonmin, lonmax, latmin, latmax])
+    print([lonmin, lonmax, latmin, latmax])
+    merc_map = CreateMercMap(latmin, lonmin, latmax, lonmax)
+    merc_map.hexbin(df['longitude'], df['latitude'], bins='log', cmap=plt.cm.YlOrRd_r, alpha=0.5, gridsize=100)
     plt.xlabel('Longitude')
     plt.ylabel('Latitude')
     plt.title('Heatmap of tweets for {}'.format(city))
@@ -65,5 +68,7 @@ def GraphClusteredHexbin(df, centers, output_folder, city):
     plt.savefig('{}/hexmap_{}'.format(output_folder, city))
     plt.clf()
 
-def CreateMercMap(latmin, lonmin, latmax, lonmax)
-    return Basemap(projection='merc', llcrnrlat=latmin, llcrnrlon=lonmin, urcrnrlat=latmax, urcrnrlon=lonmax, lat_ts=1)
+def CreateMercMap(latmin, lonmin, latmax, lonmax):
+    basemap = Basemap(projection='merc', llcrnrlat=latmin, llcrnrlon=lonmin, urcrnrlat=latmax, urcrnrlon=lonmax, lat_ts=1)
+    basemap.bluemarble()
+    return basemap
