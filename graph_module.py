@@ -51,14 +51,12 @@ def GraphClusteredHexbin(df, centers, output_folder, city):
     lonmin = df['longitude'].min()
     lonmax = df['longitude'].max()
 
-    #plt.hexbin(df['longitude'], df['latitude'], bins='log', cmap=plt.cm.YlOrRd_r, alpha=1.0, gridsize=100)
-    #plt.axis([lonmin, lonmax, latmin, latmax])
     print([lonmin, lonmax, latmin, latmax])
     merc_map = Basemap(projection='merc', llcrnrlat=latmin, llcrnrlon=lonmin, urcrnrlat=latmax, urcrnrlon=lonmax, resolution='h')
     merc_map.drawcoastlines()
     merc_map.drawstates()
     x, y = merc_map(df['longitude'].values, df['latitude'].values)
-    merc_map.hexbin(x, y, bins='log', cmap=plt.cm.YlOrRd_r, alpha=1.0, gridsize=200, mincnt=2)
+    merc_map.hexbin(x, y, bins='log', cmap=plt.cm.YlOrRd_r, alpha=1.0, gridsize=200, mincnt=1)
     plt.xlabel('Longitude')
     plt.ylabel('Latitude')
     plt.title('Heatmap of tweets for {}'.format(city))
@@ -69,5 +67,7 @@ def GraphClusteredHexbin(df, centers, output_folder, city):
     c_lons, c_lats = merc_map(centers[0], centers[1])
     plt.scatter(c_lons, c_lats, color='blue', s=50, alpha=1.0)
 
+
+    plt.tight_layout()
     plt.savefig('{}/hexmap_{}'.format(output_folder, city))
     plt.clf()
