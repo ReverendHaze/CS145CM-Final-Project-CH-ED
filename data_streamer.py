@@ -5,11 +5,12 @@ import json
 import pandas as pd
 import datetime
 import pickle
+from time import sleep
 from tweepy.streaming import StreamListener
 from tweepy import OAuthHandler
 from tweepy import Stream
 
-RESULTS_FOLDER = 'out'
+RESULTS_FOLDER = 'out/data'
 
 #All boxes are of the form W:S:E:N with all values given in
 #longitude/latitude. Boxes returned from the google maps API.
@@ -56,5 +57,9 @@ if __name__ == '__main__':
     auth = OAuthHandler(auth_dict['consumer_key'], auth_dict['consumer_secret'])
     auth.set_access_token(auth_dict['access_token'], auth_dict['access_token_secret'])
     stream = Stream(auth = auth, listener = listener)
-    stream.filter(locations=CHICAGO_BOX+LA_BOX+HOUSTON_BOX)
+    while True:
+        try:
+            stream.filter(locations=CHICAGO_BOX+LA_BOX+HOUSTON_BOX)
+        except:
+            sleep(10)
 

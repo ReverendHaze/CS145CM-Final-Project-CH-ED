@@ -6,8 +6,7 @@ import os
 
 # Our modules
 import pickle_to_df
-import graph_freqs
-import graph_hexbin
+import graph_module
 import kmeans
 
 # Code to execute when the script is run
@@ -22,47 +21,51 @@ def main():
         master_df = pickle.load(f)
 
     # Graph the number of tweets per minute over all data
-    graph_filename = '{}/graph/freq/tweets_per_min.png'.format(output_folder)
-    mkdir(graph_filename)
-    graph_freqs.GraphFreqs(master_df, graph_filename)
+    freq_folder = '{}/graph/freq'.format(output_folder)
+    mkdir(freq_folder)
+    graph_module.GraphFreqs(master_df, freq_folder)
 
     # Remove non-geocoded tweets
     master_df = master_df.dropna(subset=['longitude', 'latitude'])
-    master_df = master_df[master_df.apply(InCity, axis=1)]
+    master_df['City'] = master_df.apply(InCity, axis=1)
 
-    (master_df, _) = kmeans.ApplyKMeans(master_df, ['longitude', 'latitude'], 3, 'city_num')
-    for index, df in master_df.groupby('city_num'):
+    # (Uncomment/Comment) to (restore/remove) datapoints outside of the
+    # three desired cities from the dataset.
+    master_df = master_df[master_df['City'] != 'Other']
+
+    for index, df in master_df.groupby('City'):
+        # Graph tweet rate over time
+        graph_module.GraphFreqs(df, freq_folder, city=index)
+
         # Graph the number of tweets within each part of each city
-        (_, centers) = kmeans.ApplyKMeans(df, ['longitude', 'latitude'], 5, 'center')
-        graph_filename = '{}/graph/hex/tweets_by_region_{}.png'.format(output_folder, index)
-        mkdir(graph_filename)
-        graph_hexbin.GraphCityHexbin(df, centers, graph_filename)
+        centers = kmeans.ApplyKMeans(df, ['longitude', 'latitude'], 6)
+        hex_folder = '{}/graph/hex'.format(output_folder)
+        mkdir(hex_folder)
+        graph_module.GraphClusteredHexbin(df, centers, hex_folder, index)
 
-# Helper function to make the directory to a file
-# First extracts the directory of the file, then
-# makes that directory if it doesn't exist
-def mkdir(filename):
+# Helper function to make the directory
+def mkdir(folder):
     try:
-        os.makedirs(os.path.dirname(filename))
+        os.makedirs(folder)
     except:
         pass
 
 def InCity(tweet):
-    CHICAGO_BOX = [ -87.94,  -87.52, 41.64, 42.02]
-    LA_BOX      = [-118.66, -118.16, 33.70, 34.34]
-    HOUSTON_BOX = [ -95.79,  -95.01, 29.52, 30.11]
+    ch_minlon, ch_maxlon, ch_minlat, ch_maxlat = [ -87.94,  -87.52, 41.64, 42.02]
+    la_minlon, la_maxlon, la_minlat, la_maxlat = [-118.66, -118.16, 33.70, 34.34]
+    ho_minlon, ho_maxlon, ho_minlat, ho_maxlat = [ -95.79,  -95.01, 29.52, 30.11]
 
     lon = tweet['longitude']
     lat = tweet['latitude']
 
-    if (CHICAGO_BOX[0] <= lon <= CHICAGO_BOX[1]) and (CHICAGO_BOX[2] <= lat <= CHICAGO_BOX[3]):
-        return True
-    if (HOUSTON_BOX[0] <= lon <= HOUSTON_BOX[1]) and (HOUSTON_BOX[2] <= lat <= HOUSTON_BOX[3]):
-        return True
-    if (LA_BOX[0] <= lon <= LA_BOX[1]) and (LA_BOX[2] <= lat <= LA_BOX[3]):
-        return True
+    if (ch_minlon <= lon <= ch_maxlon) and (ch_minlat <= lat <= ch_maxlat):
+        return 'Chicago'
+    if (ho_minlon <= lon <= ho_maxlon) and (ho_minlat <= lat <= ho_maxlat):
+        return 'Houston'
+    if (la_minlon <= lon <= la_maxlon) and (la_minlat <= lat <= la_maxlat):
+        return 'LA'
     else:
-        return False
+        return 'Other'
 
 if __name__ == '__main__':
     main()
