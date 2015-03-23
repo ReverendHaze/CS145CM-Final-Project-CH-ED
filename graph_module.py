@@ -7,11 +7,11 @@ from mpl_toolkits.basemap import Basemap
 plt.style.use('ggplot')
 
 # Simple graphing module to output a graph of the number of tweets by minute
-def GraphFreqs(df, output_folder, city=None, win_size_sec=90):
+def GraphFreqs(df, output_folder, city=None, win_size_sec=300):
     # Create a binned timestamp of width win_size_sec and count the number of entries within
     # each period.
     df['graph_ts'] = list(map(lambda x: GetTS(x, win_size_sec), df['created_at']))
-    df['count'] = 1
+    df.loc[:,'count'] = 1
     df = df[['created_at', 'graph_ts', 'count']]
     counts_by_ts = df.groupby('graph_ts').sum()
 
@@ -56,18 +56,24 @@ def GraphClusteredHexbin(df, centers, output_folder, city):
     merc_map.drawcoastlines()
     merc_map.drawstates()
     x, y = merc_map(df['longitude'].values, df['latitude'].values)
-    merc_map.hexbin(x, y, bins='log', cmap=plt.cm.YlOrRd_r, alpha=1.0, gridsize=200, mincnt=1)
+    merc_map.hexbin(x, y, bins='log', alpha=1.0, gridsize=750, mincnt=1)
     plt.xlabel('Longitude')
+    xmin = min(x)-1
+    xmax = max(x)+1
+    plt.xticks(np.arange(xmin, xmax, (xmin-xmax)/5), np.arange(lonmin, lonmax, (lonmax-lonmin)/5))
+    plt.subplots_adjust(bottom=0.15)
     plt.ylabel('Latitude')
+    ymin = min(y)-1
+    ymax = max(y)+1
+    plt.yticks(np.arange(ymin, ymax, (ymax-ymin)/5), np.arange(latmin, latmax, (latmax-latmin)/5))
     plt.title('Heatmap of tweets for {}'.format(city))
     cb = plt.colorbar()
     cb.set_label('log(counts)')
 
     centers = list(zip(*centers))
     c_lons, c_lats = merc_map(centers[0], centers[1])
-    plt.scatter(c_lons, c_lats, color='blue', s=50, alpha=1.0)
+    plt.scatter(c_lons, c_lats, color='red', s=15, alpha=1.0)
 
 
-    plt.tight_layout()
-    plt.savefig('{}/hexmap_{}'.format(output_folder, city))
+    plt.savefig('{}/hexmap_{}'.format(output_folder, city), dpi=300)
     plt.clf()

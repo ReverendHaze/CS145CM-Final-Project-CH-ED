@@ -35,10 +35,10 @@ def main():
 
     for index, df in master_df.groupby('City'):
         # Graph tweet rate over time
-        graph_module.GraphFreqs(master_df, freq_folder, city=index)
+        graph_module.GraphFreqs(df, freq_folder, city=index)
 
         # Graph the number of tweets within each part of each city
-        centers = kmeans.ApplyKMeans(df, ['longitude', 'latitude'], 5)
+        centers = kmeans.ApplyKMeans(df, ['longitude', 'latitude'], 6)
         hex_folder = '{}/graph/hex'.format(output_folder)
         mkdir(hex_folder)
         graph_module.GraphClusteredHexbin(df, centers, hex_folder, index)

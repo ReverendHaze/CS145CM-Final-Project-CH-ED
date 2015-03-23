@@ -6,7 +6,7 @@ import datetime
 
 def CreateDF(master_filename):
     output_folder = master_filename.split('/')[0]
-    in_files = glob.glob('{}/*.pickle'.format(output_folder))
+    in_files = glob.glob('{}/data/*.pickle'.format(output_folder))
     try:
         in_files.remove(master_filename)
     except:
