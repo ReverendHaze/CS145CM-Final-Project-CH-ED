@@ -16,30 +16,30 @@ from sklearn.cluster import KMeans
         # master_df, the input data frame with cluster_column added and populated and all rows with NaN values in column_list removed
         # centers, a (n_clusters)x(len(column_list)) array containing the locations of the cluster centers
 
-def ApplyKMeans(master_df, column_list, n_clusters, cluster_column):
+def ApplyKMeans(df, column_list, n_clusters, cluster_column=None):
 
     # reduce df to features of interest
-    master_df = master_df.dropna(subset=column_list)
-    master_reduced = master_df[column_list]
+    df = df.dropna(subset=column_list)
+    reduced = df[column_list]
 
     # convert features of interest to np.float64 format
-    for column in column_list:
-        master_reduced[column]=master_reduced[column].astype(np.float64)
+    reduced = reduced.convert_objects(convert_numeric=True)
 
     # initialize and fit KMeans model
     model = KMeans(n_clusters=n_clusters, init='k-means++')
-    model.fit(master_reduced)
-
-    # get cluster labels for each data point
-    labels = model.labels_
-
-    # add labels to master data frame
-    master_df[cluster_column]=labels
+    model.fit(reduced)
 
     # get cluster centers
     centers = model.cluster_centers_
 
-    return(master_df, centers)
+    if cluster_column is None:
+        return centers
+    else:
+        # get cluster labels for each data point
+        labels = model.labels_
 
+        # add labels to master data frame
+        df[cluster_column]=labels
 
+        return(centers, df)
 
