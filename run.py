@@ -7,7 +7,7 @@ import os
 # Our modules
 import pickle_to_df
 import graph_module
-import kmeans
+import cluster_module
 
 # Code to execute when the script is run
 def main():
@@ -38,7 +38,7 @@ def main():
         graph_module.GraphFreqs(df, freq_folder, city=index)
 
         # Graph the number of tweets within each part of each city
-        centers = kmeans.ApplyKMeans(df, ['longitude', 'latitude'], 6)
+        centers = cluster_module.ApplyKMeans(df, ['longitude', 'latitude'], 6)
         hex_folder = '{}/graph/hex'.format(output_folder)
         mkdir(hex_folder)
         graph_module.GraphClusteredHexbin(df, centers, hex_folder, index)
