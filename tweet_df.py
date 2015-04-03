@@ -4,21 +4,35 @@ import pickle
 import glob
 import datetime
 
-def CreateDF(master_filename):
-    output_folder = master_filename.split('/')[0]
-    in_files = glob.glob('{}/data/*.pickle'.format(output_folder))
+MASTER_DF_PATH = 'out/master.pickle'
+DATA_FOLDER = 'out/data'
+
+def GetTweetDF():
     try:
-        in_files.remove(master_filename)
+        with open(MASTER_DF_PATH, 'rb') as f:
+            m_file_count, master_df = pickle.load(f)
+            in_files = glob.glob('{}/*.pickle'.format(DATA_FOLDER))
+            if len(in_files > m_file_count):
+                return UpdateTweetDF(in_files, m_file_count, master_df)
+            else:
+                return master_df
     except:
-        pass
-    dfs = []
-    for twt_file in in_files:
-        with open(twt_file, 'rb') as f:
-            df = TweetsToDF(pickle.load(f))
-            dfs.append(df)
+        return CreateTweetDF()
+
+def CreateTweetDF():
+    in_files = glob.glob('{}/*.pickle'.format(DATA_FOLDER))
+    dfs = map(pd.read_pickle, in_files)
     master_df = pd.concat(dfs)
     with open(master_filename, 'wb+') as f:
-        pickle.dump(master_df, f)
+        pickle.dump([len(in_files), master_df], f)
+    return master_df
+
+def UpdateTweetDF(in_files, master_df_files, master_df):
+    dfs = map(pd.read_pickle, sort(in_files)[master_df_files:])
+    master_df = pd.concat([master_df] + dfs)
+    with open(MASTER_DF_PATH, 'wb+') as f:
+        pickle.dump([master_df_files + len(dfs), master_df], f)
+    return master_df
 
 def TweetsToDF(tweets):
     tweets_dict = {}

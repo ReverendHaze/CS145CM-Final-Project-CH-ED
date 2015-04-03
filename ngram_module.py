@@ -17,11 +17,13 @@ from tokenizer import tokenizeRawTweetText as tokenize
 OUT_FOLDER = 'out'
 PARTITIONS = 20
 
+def CreateNGramDF(master_df):
+
 def tprint(print_string):
     print('{}: {}'.format(time.strftime("%H:%M:%S"), print_string))
 
 #Build ngrams (and possibly our ngram counters) for a new tweet
-def build_ngrams(tweet, stop_words, g_counter=None, n=2):
+def BuildNGrams(tweet, stop_words, g_counter=None, n=2):
     tokens = tokenize(tweet)
     tokens= list(filter(lambda x: x not in stop_words, tokens))
     tokens = list(filter(lambda x: not isalpha(), tokens))
@@ -119,4 +121,5 @@ while i*window < num_cols:
 #
 #with open('{}/bigrams.pickle', 'wb+') as f:
 #    pickle.dump(cols_df, f)
+if __name__ == '__main__':
 
