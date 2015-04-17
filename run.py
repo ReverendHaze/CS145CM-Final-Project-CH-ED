@@ -5,25 +5,20 @@ import pickle
 import os
 
 # Our modules
-import pickle_to_df
+import tweet_df
 import graph_module
-import kmeans
+import cluster_module
 
 # Code to execute when the script is run
 def main():
-    output_folder = 'out'
-    master_filename = '{}/{}.pickle'.format(output_folder, 'master')
 
-    # If the master dataframe doesn't exist, create it and then load it.
-    if not os.path.isfile(master_filename):
-        pickle_to_df.CreateDF(master_filename)
-    with open(master_filename, 'rb') as f:
-        master_df = pickle.load(f)
+    # Get the dataframe of all tweets, creating it from
+    # the data files if necessary and building
+    # incrementally with new files.
+    master_df = tweet_df.GetTweetDF()
 
     # Graph the number of tweets per minute over all data
-    freq_folder = '{}/graph/freq'.format(output_folder)
-    mkdir(freq_folder)
-    graph_module.GraphFreqs(master_df, freq_folder)
+    graph_module.GraphFreqs(master_df)
 
     # Remove non-geocoded tweets
     master_df = master_df.dropna(subset=['longitude', 'latitude'])
@@ -35,13 +30,11 @@ def main():
 
     for index, df in master_df.groupby('City'):
         # Graph tweet rate over time
-        graph_module.GraphFreqs(df, freq_folder, city=index)
+        graph_module.GraphFreqs(df, city=index)
 
         # Graph the number of tweets within each part of each city
-        centers = kmeans.ApplyKMeans(df, ['longitude', 'latitude'], 6)
-        hex_folder = '{}/graph/hex'.format(output_folder)
-        mkdir(hex_folder)
-        graph_module.GraphClusteredHexbin(df, centers, hex_folder, index)
+        centers = cluster_module.ApplyKMeans(df, ['longitude', 'latitude'], 6)
+        graph_module.GraphClusteredHexbin(df, centers, index)
 
 # Helper function to make the directory
 def mkdir(folder):
