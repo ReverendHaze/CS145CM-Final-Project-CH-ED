@@ -29,4 +29,4 @@ def get_histograms(city, n_days=0, n_hours=1, n_minutes=0):
                 histograms[key] = np.array([value])
 
     #return completed dictionary of histogram vectors
-    return histogramshollywood sarcastic plays himself producer
+    return histograms
