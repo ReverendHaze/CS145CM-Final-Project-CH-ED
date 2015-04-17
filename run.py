@@ -35,6 +35,7 @@ def main():
         # Graph the number of tweets within each part of each city
         centers = cluster_module.ApplyKMeans(df, ['longitude', 'latitude'], 6)
         graph_module.GraphClusteredHexbin(df, centers, index)
+    return master_df
 
 # Helper function to make the directory
 def mkdir(folder):
@@ -61,5 +62,5 @@ def InCity(tweet):
         return 'Other'
 
 if __name__ == '__main__':
-    main()
+    master_df = main()
 
