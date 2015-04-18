@@ -18,9 +18,9 @@ from tokenizer import tokenizeRawTweetText as tokenize
 OUT_FOLDER = 'out'
 
 #Takes in raw tweet text and builds a master counter for it.
-def BuildCounter(tweets, write_to_file=False)
+def BuildCounter(tweets, write_to_file=False):
     tprint('Failed to find counts, creating new counts pickle.')
-    counter = reduce(+, tweets.apply(BuildNGrams))
+    counter = reduce(sum, tweets.apply(BuildNGrams))
 
     if write_to_file:
         with open('{}/word_counts.txt'.format(OUT_FOLDER), 'w+') as f:
