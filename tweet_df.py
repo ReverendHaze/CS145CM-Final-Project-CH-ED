@@ -6,6 +6,8 @@ import natsort
 import os
 import shelve
 
+from debug_module import *
+
 CHICAGO_DF = 'out/chicago.pickle'
 HOUSTON_DF = 'out/houston.pickle'
 LA_DF = 'out/la.pickle'
@@ -32,57 +34,63 @@ def GetTweetDF():
         CreateTweetDF(in_files)
     else:
         config = shelve.open(CONFIG_FILE)
-        print('Files in master dataframes: {}'.format(config['converted_files']))
-        print('Files in data folder: {}'.format(len(in_files)))
+        tprint('Files in master dataframes: {}'.format(config['converted_files']))
+        tprint('Files in data folder: {}'.format(len(in_files)))
         if len(in_files) > config['converted_files'] + 24: #4 hours
-            print('Updating with new input files...')
+            tprint('Updating with new input files...')
             return UpdateTweetDF(in_files, config['converted_files'])
         else:
-            print('Not enough new input files to warrant concatenation. Done.')
+            tprint('Not enough new input files to warrant concatenation. Done.')
 
 def CreateTweetDF(in_files):
-    print('Failed, creating new master pickles')
+    tprint('Failed, creating new master pickles')
     dfs = list(map(lambda x: TweetsToDF(pd.read_pickle(x)), in_files))
     master_df = pd.concat(dfs)
     master_df.loc[:,'city'] = master_df.apply(InCity, axis=1)
-    print('Writing master pickles to files')
+    tprint('Writing master pickles to files')
     with open(CHICAGO_DF, 'wb+') as f:
         pickle.dump(master_df[master_df['city'] == 'Chicago'], f)
+    tprint('Wrote Chicago DF')
     with open(HOUSTON_DF, 'wb+') as f:
         pickle.dump(master_df[master_df['city'] == 'Houston'], f)
+    tprint('Wrote Houston DF')
     with open(LA_DF, 'wb+') as f:
         pickle.dump(master_df[master_df['city'] == 'LA'], f)
+    tprint('Wrote LA DF')
     config = shelve.open(CONFIG_FILE)
     config['converted_files'] = len(in_files)
     config.close()
 
 
 def UpdateTweetDF(in_files, master_df_files):
-    print('Updating with {} new data files'.format(len(in_files)-master_df_files))
+    tprint('Updating with {} new data files'.format(len(in_files)-master_df_files))
     total_files = len(in_files)
     in_files = natsort.natsorted(in_files[master_df_files:], key=lambda y: y.lower())
     dfs = []
     for index, in_file in enumerate(in_files):
-        print('Reading file {}'.format(index))
+        tprint('Reading file {}'.format(index))
         tweets = pd.read_pickle(in_file)
         dfs.append(TweetsToDF(tweets))
-    print('Concatenating files...')
+    tprint('Concatenating files...')
     dfs = pd.concat(dfs)
     dfs.loc[:,'city'] = dfs.apply(InCity, axis=1)
-    print('Writing updated master dfs')
+    tprint('Writing updated master dfs')
     with open(CHICAGO_DF, 'r+') as f:
         df = pd.read_pickle(f)
         chicago_mask = dfs['city'] == 'Chicago'
         pickle.dump(pd.concat([df, dfs[chicago_mask]], f))
         dfs = dfs[~chicago_mask]
+    tprint('Completed Chicago DF')
     with open(HOUSTON_DF, 'r+') as f:
         df = pd.read_pickle(f)
         houston_mask = dfs['city'] == 'Houston'
         pickle.dump(pd.concat([df, dfs[houston_mask]], f))
         dfs = dfs[~houston_mask]
+    tprint('Completed Houston DF')
     with open(LA_DF, 'r+') as f:
         df = pd.read_pickle(f)
         pickle.dump(pd.concat([df, dfs], f))
+    tprint('Completed LA DF')
     config = shelve.open(CONFIG_FILE)
     config['converted_files'] = len(in_files)
     config.close()
@@ -136,15 +144,13 @@ def InCity(tweet):
     try:
         lon = tweet['longitude']
         lat = tweet['latitude']
+        if (CH_MINLON <= lon <= ch_maxlon) and (CH_MINLAT <= lat <= ch_maxlat):
+            return 'Chicago'
+        if (HO_MINLON <= lon <= HO_MAXLON) and (HO_MINLAT <= lat <= HO_MAXLAT):
+            return 'Houston'
+        if (LA_MINLON <= lon <= LA_MAXLON) and (LA_MINLAT <= lat <= LA_MAXLAT):
+            return 'LA'
     except:
-        return 'Other'
-
-    if (CH_MINLON <= lon <= ch_maxlon) and (CH_MINLAT <= lat <= ch_maxlat):
-        return 'Chicago'
-    if (HO_MINLON <= lon <= HO_MAXLON) and (HO_MINLAT <= lat <= HO_MAXLAT):
-        return 'Houston'
-    if (LA_MINLON <= lon <= LA_MAXLON) and (LA_MINLAT <= lat <= LA_MAXLAT):
-        return 'LA'
-    else:
-        return 'Other'
+        pass
+    return 'Other'
 

@@ -2,18 +2,18 @@
 
 import pickle
 import os.path
-import pandas as pd
-import numpy as np
 import time
 import glob
 import random
-
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 from math import log
 from collections import Counter
-from tweet_df import GetTweetDF
-import matplotlib.pyplot as plt
 
+from debug_module import *
 from tokenizer import tokenizeRawTweetText as tokenize
+from tweet_df import GetTweetDF
 
 OUT_FOLDER = 'out'
 
@@ -57,7 +57,4 @@ def GetTopNGrams(master_df, n):
 
     ngrams, _ = zip(*counter.most_common(n))
     return ngrams
-
-def tprint(print_string):
-    print('{}: {}'.format(time.strftime("%H:%M:%S"), print_string))
 
