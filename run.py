@@ -27,39 +27,55 @@ def main():
     # three desired cities from the dataset.
     master_df = master_df[master_df['City'] != 'Other']
 
-    #function to get dictionary of histograms for a given city and time window
-    def get_histograms(city, n_days=0, n_hours=1, n_minutes=0):
+    # BurstyBigrams = function to obtain list of bursty bigrams for the last timestep in a window
+    # inputs:
+        # df = window of master_df for one city
+        # n_days, n_hours, n_minutes = optional parameters to define timestep
+        # cutoff = zscore above which a bigram is considered 'bursty'
 
-        master_df = master_df.loc[(master_df['City']==city), 'text']
+    def BurstyBigrams(df, n_days=0, n_hours=1, n_minutes=0, cutoff=1.64):
 
-        t_step = datetime.timedelta(days=n_days, minutes=n_minutes, hours=n_hours)
-
-        # create empty dictionary
+        # create empty dictionary of histograms
         histograms = {}
 
-        # loop over master_df by timestep
-        t_start = master_df.DatetimeIndex.min()
-        t_max = master_df.DatetimeIndex.max()
+        # define timestep
+        t_step = datetime.timedelta(days=n_days, minutes=n_minutes, hours=n_hours)
 
+        # loop over df by timestep
+        t_start = df.DatetimeIndex.min()
+        t_max = df.DatetimeIndex.max()
+
+        i=0
         while t_start <= t_max:
             t_end = t_start + t_step
 
             # get dictionary of bigrams and their frequency within the timestep
-            freq_dict = gram_module.function(master_df[master_df.index < t_end])
+            freq_dict = ngram_module.BuildCounter(df[df.index < t_end])
 
-            # remove current timestep from master_df and update end of next timestep
-            master_df = master_df[master_df.index >= t_start]
+            # remove current timestep from df and update end of next timestep
+            df = df[df.index >= t_start]
             t_start = t_end
 
             # add that timestep's output to main histogram dictionary
             for key, value in freq_dict.iteritems():
                 if key in histograms:
-                    histograms[key] = histograms[key].append(value)
+                    histograms[key][i] = value
                 else:
-                    histograms[key] = np.array([value])
+                    histograms[key] = np.zeros(i).append(value)
+            i=i+1
 
-        #return completed dictionary of histogram vectors
-        return histograms
+        #calculate zscores and burstiness
+        histograms = pd.DataFrame.from_dict(histograms)
+        histograms = (histograms-histograms.mean())/histograms.std(axis=1)
+        bursty = []
+
+        for bigram in histograms.columns:
+            zscore = histograms[bigram][len(histograms[bigram]-1]
+            if zscore >= cutoff:
+                bursty.append(bigram)
+
+        return bursty
+
 
 
     for index, df in master_df.groupby('City'):
