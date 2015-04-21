@@ -13,10 +13,12 @@ import ngram_module
 # Code to execute when the script is run
 def main():
 
-    # Get the dataframe of all tweets, creating it from
-    # the data files if necessary and building
+    # Build the dataframes for all tweets, creating
+    # them from the data files if necessary and building
     # incrementally with new files.
-    master_df = tweet_df.GetTweetDF()
+    tweet_df.BuildTweetDF()
+
+    for
 
     # Graph the number of tweets per minute over all data
     graph_module.GraphFreqs(master_df)

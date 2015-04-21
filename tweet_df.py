@@ -26,7 +26,7 @@ FROWN_EMOTICONS = ['>:[', ':-(', ':(',  ':-c', ':c', ':-<', ':<', ':-[', ':[', '
 HORROR_EMOTICONS = ['D:<', 'D:', 'D8', 'D;', 'D=', 'DX', 'v.v', 'D-\':']
 
 
-def GetTweetDF():
+def MakeTweetDF():
     in_files = glob.glob('{}/*.pickle'.format(DATA_FOLDER))
     if not (os.path.exists(CHICAGO_DF) and \
             os.path.exists(HOUSTON_DF) and \
