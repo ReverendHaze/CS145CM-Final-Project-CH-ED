@@ -13,7 +13,7 @@ def GraphFreqs(df, city=None, win_size_sec=300):
     # Create a binned timestamp of width win_size_sec and count the number of entries within
     # each period.
     df['graph_ts'] = list(map(lambda x: GetTS(x, win_size_sec), df['created_at']))
-    df.loc[:,'count'] = 1
+    df['count'] = 1
     df = df[['created_at', 'graph_ts', 'count']]
     counts_by_ts = df.groupby('graph_ts').sum()
 
@@ -23,7 +23,7 @@ def GraphFreqs(df, city=None, win_size_sec=300):
 
     # Create a 'tweets_per_min' variable, then ready the df for graphing
     df['tweets_per_min'] = df['count_r'] / (win_size_sec / 60.0)
-    df.index = pd.DatetimeIndex(df['created_at']).tz_convert('US/Pacific')
+    df.index = pd.DatetimeIndex(df['created_at'])
     df = df[['tweets_per_min']]
     df = df.sort()
 
@@ -53,7 +53,6 @@ def GraphClusteredHexbin(df, centers, city):
     lonmin = df['longitude'].min()
     lonmax = df['longitude'].max()
 
-    print([lonmin, lonmax, latmin, latmax])
     merc_map = Basemap(projection='merc', llcrnrlat=latmin, llcrnrlon=lonmin, urcrnrlat=latmax, urcrnrlon=lonmax, resolution='h')
     merc_map.drawcoastlines()
     merc_map.drawstates()

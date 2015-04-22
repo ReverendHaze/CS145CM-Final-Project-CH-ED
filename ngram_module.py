@@ -13,7 +13,7 @@ from collections import Counter
 
 from debug_module import *
 from tokenizer import tokenizeRawTweetText as tokenize
-from tweet_df import GetTweetDF
+#from tweet_df import GetTweetDF
 
 OUT_FOLDER = 'out'
 

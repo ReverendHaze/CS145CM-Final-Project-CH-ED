@@ -25,6 +25,14 @@ SMIRK_EMOTICONS = [';-)', ';)', '*-)', '*)', ';-]', ';]', ';D', ';^)']
 FROWN_EMOTICONS = ['>:[', ':-(', ':(',  ':-c', ':c', ':-<', ':<', ':-[', ':[', ':{']
 HORROR_EMOTICONS = ['D:<', 'D:', 'D8', 'D;', 'D=', 'DX', 'v.v', 'D-\':']
 
+def GetCity(city):
+    if city is 'Chicago':
+        master_df = pd.read_pickle(CHICAGO_DF)
+    if city is 'Houston':
+        master_df = pd.read_pickle(HOUSTON_DF)
+    if city is 'LA':
+        master_df = pd.read_pickle(LA_DF)
+    return master_df
 
 def MakeTweetDF():
     in_files = glob.glob('{}/*.pickle'.format(DATA_FOLDER))
@@ -75,19 +83,19 @@ def UpdateTweetDF(in_files, master_df_files):
     dfs = pd.concat(dfs)
     dfs.loc[:,'city'] = dfs.apply(InCity, axis=1)
     tprint('Writing updated master dfs')
-    with open(CHICAGO_DF, 'r+') as f:
+    with open(CHICAGO_DF, 'rb+') as f:
         df = pd.read_pickle(f)
         chicago_mask = dfs['city'] == 'Chicago'
         pickle.dump(pd.concat([df, dfs[chicago_mask]], f))
         dfs = dfs[~chicago_mask]
     tprint('Completed Chicago DF')
-    with open(HOUSTON_DF, 'r+') as f:
+    with open(HOUSTON_DF, 'rb+') as f:
         df = pd.read_pickle(f)
         houston_mask = dfs['city'] == 'Houston'
         pickle.dump(pd.concat([df, dfs[houston_mask]], f))
         dfs = dfs[~houston_mask]
     tprint('Completed Houston DF')
-    with open(LA_DF, 'r+') as f:
+    with open(LA_DF, 'rb+') as f:
         df = pd.read_pickle(f)
         pickle.dump(pd.concat([df, dfs], f))
     tprint('Completed LA DF')
@@ -144,7 +152,7 @@ def InCity(tweet):
     try:
         lon = tweet['longitude']
         lat = tweet['latitude']
-        if (CH_MINLON <= lon <= ch_maxlon) and (CH_MINLAT <= lat <= ch_maxlat):
+        if (CH_MINLON <= lon <= CH_MAXLON) and (CH_MINLAT <= lat <= CH_MAXLAT):
             return 'Chicago'
         if (HO_MINLON <= lon <= HO_MAXLON) and (HO_MINLAT <= lat <= HO_MAXLAT):
             return 'Houston'
