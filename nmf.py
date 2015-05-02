@@ -2,8 +2,7 @@ import pickle
 import pandas as pd
 from sklearn.decomposition import NMF
 
-n_topics = 50 
-n_top_words = 20
+n_topics = 50
 
 in_file = 
 
