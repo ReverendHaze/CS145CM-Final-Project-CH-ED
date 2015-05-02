@@ -8,9 +8,9 @@ n_top_words = 20
 
 in_file =
 
-zscores = pd.pickle.io.read_pickle(in_file)
+hist = pd.pickle.io.read_pickle(in_file)
 
-nmf = NMF(n_components=n_topics, random_state=1).fit(zscores)
+nmf = NMF(n_components=n_topics, random_state=1).fit(hist)
 
 feature_names = vectorizer.get_feature_names()
 
