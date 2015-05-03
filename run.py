@@ -8,13 +8,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Our modules
-import tweet_df
-import graph_module
-import cluster_module
-import ngram_module
-import burst_module
-import dimension_module as dim_module
-from debug_module import *
+import modules.tweet_df as tweet_df
+import modules.graph_module as graph_module
+import modules.cluster_module as cluster_module
+import modules.ngram_module as ngram_module
+import modules.burst_module as burst_module
+import modules.dimension_module as dim_module
+from modules.debug_module import *
 
 # Code to execute when the script is run
 def main():
@@ -50,7 +50,10 @@ def main():
         for method in ['NMF', 'PCA']:
             err = map(lambda x: dim_module.ReduceDimension(hist_mat, x, method),
                                                            range(hist_rank))
-            plt.plot(range(hist_rank), err)
+            print(type(err))
+            print(len(err))
+            print(dir(err))
+            plt.plot(err)
             plt.savefig('out/graph/{}_err.png'.format(method))
 
 

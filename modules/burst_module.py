@@ -3,11 +3,11 @@ import numpy as np
 import datetime
 import matplotlib.pyplot as plt
 from math import log
-from debug_module import *
 import pytz
-import ngram_module
 import scipy.sparse as sp
 
+from modules.debug_module import *
+import modules.ngram_module as ngram_module
 
 def Histogram(df, city, n_days=0, n_hours=2, n_minutes=0):
 
