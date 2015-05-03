@@ -3,6 +3,9 @@
 # Prepackaged modules
 import pickle
 import os
+import datetime
+import matplotlib.pyplot as plt
+import numpy as np
 
 # Our modules
 import tweet_df
@@ -10,7 +13,7 @@ import graph_module
 import cluster_module
 import ngram_module
 import burst_module
-import datetime
+import dimension_module as dim_module
 from debug_module import *
 
 # Code to execute when the script is run
@@ -28,17 +31,11 @@ def main():
     f_string = "%a %b %d %H:%M:%S %z %Y"
     master_df.index = master_df['created_at'].apply(lambda x: datetime.datetime.strptime(x, f_string))
 
-    all_bursty = {}
     for city in 'Chicago', 'Houston', 'LA':
         master_df = tweet_df.GetCity(city)
         master_df['id'] = master_df.index
         master_df.index = master_df['created_at'].apply(lambda x: datetime.datetime.strptime(x, "%a %b %d %H:%M:%S %z %Y"))
-        # Get bursty bigrams for most recent period and overall zscores
 
-        with open('out/hist/{}.pickle'.format(city), 'wb+') as f:
-            pickle.dump(burst_module.Histogram(master_df, city), f)
-
-        all_bursty[city] = burst_module.BurstyBigrams(master_df)
         # Graph tweet rate over time
         graph_module.GraphFreqs(master_df, city=city)
 
@@ -46,6 +43,16 @@ def main():
         k_cen, master_df = cluster_module.PlotClusters(master_df, ['longitude', 'latitude'], 6, 'k_centers', 'kmeans')
         #s_cen, master_df = cluster_module.PlotClusters(master_df, ['longitude', 'latitude'], 6, 's_centers', 'spectral')
         #graph_module.GraphClusteredHexbin(master_df, centers, city)
+
+        hist_mat = burst_module.Histogram(master_df, city).as_matrix()
+        hist_rank = np.linalg.matrix_rank(hist_mat)
+        # Sensitivity analysis for reconstruction error of dimensionality reduction
+        for method in ['NMF', 'PCA']:
+            err = map(lambda x: dim_module.ReduceDimension(hist_mat, x, method),
+                                                           range(hist_rank))
+            plt.plot(range(hist_rank), err)
+            plt.savefig('out/graph/{}_err.png'.format(method))
+
 
 
 # Helper function to make the directory

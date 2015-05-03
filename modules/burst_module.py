@@ -7,7 +7,6 @@ from debug_module import *
 import pytz
 import ngram_module
 import scipy.sparse as sp
-from scipy.stats import zscore
 
 
 def Histogram(df, city, n_days=0, n_hours=2, n_minutes=0):
@@ -63,18 +62,18 @@ def Histogram(df, city, n_days=0, n_hours=2, n_minutes=0):
         i=i+1
         t_end = t_start + t_step
 
-    # remove bigrams that don't occur in enough
-    # periods
-    cutoff = 20
+    # Plot sensitivity of remaining bigrams vs cutoff
     plt.plot(list(map(lambda x: log(len(list(filter(lambda y: len(histograms[y]) > x, histograms.keys())))), range(i))))
     plt.savefig('graph_{}.png'.format(city))
+
+    # Remove bigrams that don't occur in enough periods
+    cutoff = 20
     bigrams = list(filter(lambda x: len(histograms[x]) > cutoff, histograms.keys()))
     histograms = { x: histograms[x] for x in bigrams }
 
-    ## unite in one dataframe in csr format for easy manipulations
+    # Unite in one dataframe in csr format for easy manipulations
     tprint('Number of bigrams: {}'.format(len(bigrams)))
-    df = pd.DataFrame(histograms)
-    #z = df.apply(zscore, axis=0)
+    df = pd.DataFrame(histograms).dropna(how='all', axis=1)
 
     return df
 
