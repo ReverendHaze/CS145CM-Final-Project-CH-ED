@@ -8,34 +8,45 @@ import os
 import tweet_df
 import graph_module
 import cluster_module
+import ngram_module
+import burst_module
+import datetime
+from debug_module import *
 
 # Code to execute when the script is run
 def main():
 
-    # Get the dataframe of all tweets, creating it from
-    # the data files if necessary and building
+    # Build the dataframes for all tweets, creating
+    # them from the data files if necessary and building
     # incrementally with new files.
-    master_df = tweet_df.GetTweetDF()
+    tweet_df.MakeTweetDF()
 
-    # Graph the number of tweets per minute over all data
-    graph_module.GraphFreqs(master_df)
+    # define dictionaries for bursty tweet lists and zscore dfs
 
-    # Remove non-geocoded tweets
-    master_df = master_df.dropna(subset=['longitude', 'latitude'])
-    master_df['City'] = master_df.apply(InCity, axis=1)
+    master_df = tweet_df.GetCity('Chicago')
+    master_df['id'] = master_df.index
+    f_string = "%a %b %d %H:%M:%S %z %Y"
+    master_df.index = master_df['created_at'].apply(lambda x: datetime.datetime.strptime(x, f_string))
 
-    # (Uncomment/Comment) to (restore/remove) datapoints outside of the
-    # three desired cities from the dataset.
-    master_df = master_df[master_df['City'] != 'Other']
+    all_bursty = {}
+    for city in 'Chicago', 'Houston', 'LA':
+        master_df = tweet_df.GetCity(city)
+        master_df['id'] = master_df.index
+        master_df.index = master_df['created_at'].apply(lambda x: datetime.datetime.strptime(x, "%a %b %d %H:%M:%S %z %Y"))
+        # Get bursty bigrams for most recent period and overall zscores
 
-    for index, df in master_df.groupby('City'):
+        with open('out/hist/{}.pickle'.format(city), 'wb+') as f:
+            pickle.dump(burst_module.Histogram(master_df, city), f)
+
+        all_bursty[city] = burst_module.BurstyBigrams(master_df)
         # Graph tweet rate over time
-        graph_module.GraphFreqs(df, city=index)
+        graph_module.GraphFreqs(master_df, city=city)
 
         # Graph the number of tweets within each part of each city
-        centers = cluster_module.ApplyKMeans(df, ['longitude', 'latitude'], 6)
-        graph_module.GraphClusteredHexbin(df, centers, index)
-    return master_df
+        k_cen, master_df = cluster_module.PlotClusters(master_df, ['longitude', 'latitude'], 6, 'k_centers', 'kmeans')
+        #s_cen, master_df = cluster_module.PlotClusters(master_df, ['longitude', 'latitude'], 6, 's_centers', 'spectral')
+        #graph_module.GraphClusteredHexbin(master_df, centers, city)
+
 
 # Helper function to make the directory
 def mkdir(folder):
@@ -43,23 +54,6 @@ def mkdir(folder):
         os.makedirs(folder)
     except:
         pass
-
-def InCity(tweet):
-    ch_minlon, ch_maxlon, ch_minlat, ch_maxlat = [ -87.94,  -87.52, 41.64, 42.02]
-    la_minlon, la_maxlon, la_minlat, la_maxlat = [-118.66, -118.16, 33.70, 34.34]
-    ho_minlon, ho_maxlon, ho_minlat, ho_maxlat = [ -95.79,  -95.01, 29.52, 30.11]
-
-    lon = tweet['longitude']
-    lat = tweet['latitude']
-
-    if (ch_minlon <= lon <= ch_maxlon) and (ch_minlat <= lat <= ch_maxlat):
-        return 'Chicago'
-    if (ho_minlon <= lon <= ho_maxlon) and (ho_minlat <= lat <= ho_maxlat):
-        return 'Houston'
-    if (la_minlon <= lon <= la_maxlon) and (la_minlat <= lat <= la_maxlat):
-        return 'LA'
-    else:
-        return 'Other'
 
 if __name__ == '__main__':
     master_df = main()
