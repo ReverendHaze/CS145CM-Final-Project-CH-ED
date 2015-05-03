@@ -76,6 +76,6 @@ def GraphClusteredHexbin(df, centers, city):
     plt.scatter(c_lons, c_lats, color='red', s=15, alpha=1.0)
 
 
-    plt.savefig('{}/hex/hexmap_{}'.format(GRAPH_FOLDER, city), dpi=300)
+    plt.savefig('{}/hex/hexmap_kmeans_{}'.format(GRAPH_FOLDER, city), dpi=300)
     plt.clf()
 
