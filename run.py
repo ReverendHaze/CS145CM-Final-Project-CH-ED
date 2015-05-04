@@ -42,7 +42,7 @@ def main():
         # Graph the number of tweets within each part of each city
         k_cen, master_df = cluster_module.PlotClusters(master_df, ['longitude', 'latitude'], 6, 'k_centers', 'kmeans')
         #s_cen, master_df = cluster_module.PlotClusters(master_df, ['longitude', 'latitude'], 6, 's_centers', 'spectral')
-        graph_module.GraphClusteredHexbin(master_df, k_cen, city)
+        graph_module.GraphHexbin(master_df, city)
 
         hist_mat = burst_module.Histogram(master_df, city).as_matrix()
         hist_rank = np.linalg.matrix_rank(hist_mat)

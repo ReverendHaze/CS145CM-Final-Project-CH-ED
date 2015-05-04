@@ -2,6 +2,7 @@
 import pandas as pd
 import numpy as np
 import time
+import matplotlib.cm as cm
 from matplotlib import pyplot as plt
 from mpl_toolkits.basemap import Basemap
 plt.style.use('ggplot')
@@ -46,8 +47,22 @@ def GetTS(ts, res):
     ts = time.mktime(time.strptime(ts, '%a %b %d %H:%M:%S +0000 %Y'))
     return ts - (ts % res)
 
-# Simple graphing module to output a graph of the number of tweets by minute
-def GraphClusteredHexbin(df, centers, city):
+
+
+# Simple graphing module to output a plot of either the hexbinned data points or the color-coded, clustered data points
+
+def GraphHexbin(df, city):
+
+    MapSetUp(df, hexbin_or_cluster=hexbin, city=city)
+
+
+def GraphClusters(df, city, how):
+
+    MapSetUp(df, hexbin_or_cluster=hexbin, city=city, how)
+
+
+def MapSetUp(df, hexbin_or_cluster, city, how):
+
     latmin = df['latitude'].min()
     latmax = df['latitude'].max()
     lonmin = df['longitude'].min()
@@ -56,8 +71,9 @@ def GraphClusteredHexbin(df, centers, city):
     merc_map = Basemap(projection='merc', llcrnrlat=latmin, llcrnrlon=lonmin, urcrnrlat=latmax, urcrnrlon=lonmax, resolution='h')
     merc_map.drawcoastlines()
     merc_map.drawstates()
+
     x, y = merc_map(df['longitude'].values, df['latitude'].values)
-    merc_map.hexbin(x, y, bins='log', alpha=1.0, gridsize=750, mincnt=1)
+
     plt.xlabel('Longitude')
     xmin = min(x)-1
     xmax = max(x)+1
@@ -67,15 +83,31 @@ def GraphClusteredHexbin(df, centers, city):
     ymin = min(y)-1
     ymax = max(y)+1
     plt.yticks(np.arange(ymin, ymax, (ymax-ymin)/5), np.arange(latmin, latmax, (latmax-latmin)/5))
-    plt.title('Heatmap of tweets for {}'.format(city))
-    cb = plt.colorbar()
-    cb.set_label('log(counts)')
 
-    centers = list(zip(*centers))
-    c_lons, c_lats = merc_map(centers[0], centers[1])
-    plt.scatter(c_lons, c_lats, color='red', s=15, alpha=1.0)
+    if hex_or_cluster == hexbin:
+        merc_map.hexbin(x, y, bins='log', alpha=1.0, gridsize=750, mincnt=1)
+        plt.title('Heatmap of tweets for {}'.format(city))
+        cb = plt.colorbar()
+        cb.set_label('log(counts)')
 
+        plt.savefig('{}/hex/hexmap_{}'.format(GRAPH_FOLDER, city), dpi=300)
+        plt.clf()
 
-    plt.savefig('{}/hex/hexmap_kmeans_{}'.format(GRAPH_FOLDER, city), dpi=300)
-    plt.clf()
+    else:
+        labels = df.cluster_column.unique()
+        plt.title('{}-Clustered tweets for {}'.format(how, city))
+
+        colors = iter(cm.Set2(np.linspace(0, 1, len(labels))))
+
+        for number, label in enumerate(labels):
+
+            c = colors[number]
+            reduced_df = df[df[cluster_column==label]]
+
+            x, y = merc_map(reduced_df['longitude'].values, reduced_df['latitude'].values)
+            plt.scatter(x, y, color=c, s=15, alpha=1.0)
+
+        plt.savefig('{}/cluster/hexmap_{}_{}'.format(GRAPH_FOLDER, how, city), dpi=300)
+        plt.clf()
+
 
