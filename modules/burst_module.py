@@ -27,7 +27,8 @@ def Histogram(df, city, n_days=0, n_hours=2, n_minutes=0):
     # Last tweet received
     #t_max = df.index.max()
 
-    n_steps = 168
+    #n_steps = 168
+    n_steps = (t_max-t_start)/t_step
 
     df=df[df.index >= t_start]
     df=df[df.index <= t_max]

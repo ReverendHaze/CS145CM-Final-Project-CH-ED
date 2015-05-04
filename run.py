@@ -42,20 +42,19 @@ def main():
         # Graph the number of tweets within each part of each city
         k_cen, master_df = cluster_module.PlotClusters(master_df, ['longitude', 'latitude'], 6, 'k_centers', 'kmeans')
         #s_cen, master_df = cluster_module.PlotClusters(master_df, ['longitude', 'latitude'], 6, 's_centers', 'spectral')
-        #graph_module.GraphClusteredHexbin(master_df, centers, city)
+        graph_module.GraphClusteredHexbin(master_df, k_cen, city)
 
         hist_mat = burst_module.Histogram(master_df, city).as_matrix()
         hist_rank = np.linalg.matrix_rank(hist_mat)
+        tprint('Current matrix dimensions: {}'.format(hist_mat.shape))
+        tprint('Pre-reduction matrix rank: {}'.format(hist_rank))
         # Sensitivity analysis for reconstruction error of dimensionality reduction
         for method in ['NMF', 'PCA']:
-            err = map(lambda x: dim_module.ReduceDimension(hist_mat, x, method),
-                                                           range(hist_rank))
-            print(type(err))
-            print(len(err))
-            print(dir(err))
+            tprint('Starting {} sensitivity analysis'.format(method))
+            model = dim_module.GetTrainedModel(hist_mat, hist_rank, method)
+            dim_model.GetReductionErrors(model, hist_mat, 20)
             plt.plot(err)
-            plt.savefig('out/graph/{}_err.png'.format(method))
-
+            plt.savefig('out/graph/dimensionality/{}_{}_err.png'.format(city, method))
 
 
 # Helper function to make the directory
