@@ -28,6 +28,9 @@ def GraphFreqs(df, city=None, win_size_sec=300):
     df = df[['tweets_per_min']]
     df = df.sort()
 
+    print('df type is:')
+    print(type(df))
+
     # Make the plot, add niceties and save
     ax = df.plot()
     ax.set_xlabel('Time')
@@ -51,18 +54,18 @@ def GetTS(ts, res):
 
 # Simple graphing module to output a plot of either the hexbinned data points or the color-coded, clustered data points
 
-def GraphHexbin(df, city):
+def GraphHexBin(df, city):
 
-    MapSetUp(df, hexbin_or_cluster=hexbin, city=city)
+    MapSetUp(df, hexbin_or_cluster='hexbin', city=city)
 
 
 def GraphClusters(df, city, how='KMeans'):
-
-    MapSetUp(df, hexbin_or_cluster=hexbin, city=city, how=how)
+    print('GraphClusters beginning')
+    MapSetUp(df, hexbin_or_cluster='cluster', city=city, how=how)
 
 
 def MapSetUp(df, hexbin_or_cluster, city, how='KMeans'):
-
+    print('MapSetup beginning')
     latmin = df['latitude'].min()
     latmax = df['latitude'].max()
     lonmin = df['longitude'].min()
@@ -71,6 +74,7 @@ def MapSetUp(df, hexbin_or_cluster, city, how='KMeans'):
     merc_map = Basemap(projection='merc', llcrnrlat=latmin, llcrnrlon=lonmin, urcrnrlat=latmax, urcrnrlon=lonmax, resolution='h')
     merc_map.drawcoastlines()
     merc_map.drawstates()
+    merc_map.drawmapboundary(linewidth=0, fill_color='SlateGray')
 
     x, y = merc_map(df['longitude'].values, df['latitude'].values)
 
@@ -84,30 +88,31 @@ def MapSetUp(df, hexbin_or_cluster, city, how='KMeans'):
     ymax = max(y)+1
     plt.yticks(np.arange(ymin, ymax, (ymax-ymin)/5), np.arange(latmin, latmax, (latmax-latmin)/5))
 
-    if hex_or_cluster == hexbin:
+    if hexbin_or_cluster == 'hexbin':
         merc_map.hexbin(x, y, bins='log', alpha=1.0, gridsize=750, mincnt=1)
         plt.title('Heatmap of tweets for {}'.format(city))
         cb = plt.colorbar()
         cb.set_label('log(counts)')
 
-        plt.savefig('{}/hex/hexmap_{}'.format(GRAPH_FOLDER, city), dpi=300)
+        plt.savefig('{}/hex/hexmap_{}.png'.format(GRAPH_FOLDER, city), edgecolor='none',  dpi=300)
         plt.clf()
 
     else:
         labels = df.cluster_column.unique()
         plt.title('{}-Clustered tweets for {}'.format(how, city))
 
-        colors = iter(cm.Set2(np.linspace(0, 1, len(labels))))
+        colors = iter(cm.Set3(np.linspace(0, 1, len(labels))))
 
-        for number, label in enumerate(labels):
+        for label in labels:
 
-            c = colors[number]
-            reduced_df = df[df[cluster_column==label]]
+            c = next(colors)
+            reduced_df = df.loc[df['cluster_column']==label]
 
             x, y = merc_map(reduced_df['longitude'].values, reduced_df['latitude'].values)
+
             plt.scatter(x, y, color=c, s=15, alpha=1.0)
 
-        plt.savefig('{}/cluster/hexmap_{}_{}'.format(GRAPH_FOLDER, how, city), dpi=300)
+        plt.savefig('{}/cluster/cluster_{}_{}.png'.format(GRAPH_FOLDER, how, city), edgecolor='none', dpi=300)
         plt.clf()
 
 

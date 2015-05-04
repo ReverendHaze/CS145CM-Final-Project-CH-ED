@@ -13,10 +13,10 @@ def TransformData(data, trained_model):
     data = list(map(lambda x: np.transpose(data[:,x]), range(data.shape[1])))
     return model.transform(data)
 
-def GetReductionErrors(trained_model, original, samples):
-    components = trained_model.components_
-    print(type(components))
-    print(components.size)
-    #return trained_model.reconstruction_err_
-
+def GetTopics(trained_model, ng_per_topic, name_list):
+    res = {}
+    for index, topic in enumerate(trained_model.components_):
+        topic_indices = topic.argsort()[:-ng_per_topic-1:-1]
+        res[index] = list(map(lambda x: name_list[x], topic_indices))
+    return res
 

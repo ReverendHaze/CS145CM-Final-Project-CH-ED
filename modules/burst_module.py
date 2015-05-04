@@ -68,7 +68,7 @@ def Histogram(df, city, n_days=0, n_hours=2, n_minutes=0):
     plt.savefig('graph_{}.png'.format(city))
 
     # Remove bigrams that don't occur in enough periods
-    cutoff = 100
+    cutoff = 70
     #cutoff = 6
     bigrams = list(filter(lambda x: len(histograms[x]) > cutoff, histograms.keys()))
     histograms = { x: histograms[x] for x in bigrams }

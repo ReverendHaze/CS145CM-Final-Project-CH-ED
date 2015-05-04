@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.cluster import SpectralClustering
+from random import sample
+import modules.graph_module as graph_module
 
 # GetClusters is a function that applies the scikit-learn implementation of KMeans on a pandas dataframe. It implements two clustering techniques:
     #k-means:
@@ -17,31 +19,36 @@ from sklearn.cluster import SpectralClustering
 # output:
     #saves desired graphs to output folder in graph folder
 
-def GetClusters(df, city, n_clusters, how='kmeans'):
+def GetClusters(df, city, columns= ['latitude', 'longitude'], n_clusters=12, how='kmeans'):
 
-    # reduce df to features of interest
-    df = df.dropna(how='any', subset=columns)
-    reduced = df[columns]
-
+    print('beginning GetClusters')
     # convert features of interest to np.float64 format
-    reduced = reduced.convert_objects(convert_numeric=True)
+    df = df.dropna(how='any')
+    df = df[columns]
+    df = df.convert_objects(convert_numeric=True)
 
+    print('initialize and fit model')
     # initialize and fit model
     model = []
     if how is 'kmeans':
         model = KMeans(n_clusters=n_clusters, init='k-means++')
         how = 'KMeans'
     elif how is 'spectral':
+        rand_indices = np.array(sample(range(len(df)), 50000))
+        df = df.ix[rand_indices]
+
         model = SpectralClustering(n_clusters=n_clusters, eigen_solver='arpack', affinity='nearest_neighbors')
         how = 'Spectral'
 
-    model.fit(reduced)
+    model.fit(df)
+    print('model fitted')
 
     # get cluster labels for each data point
     labels = model.labels_
 
     # add labels to master data frame
-    df[cluster_column]=labels
+    df['cluster_column']=labels
 
+    print('calling graph_module')
     graph_module.GraphClusters(df, city, how)
 
