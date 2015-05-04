@@ -16,7 +16,7 @@ import modules.burst_module as burst_module
 import modules.dimension_module as dim_module
 from modules.debug_module import *
 
-SAMPLE_SIZE = 5000000
+SAMPLE_SIZE = 1000000
 
 # Code to execute when the script is run
 def main():
