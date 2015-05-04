@@ -10,19 +10,13 @@ def GetTrainedModel(data, rank, how):
         return PCA(n_components=rank, copy=True, whiten=True).fit(data)
 
 def TransformData(data, trained_model):
-    data = list(map(lambda x: data[:,x], range(data.shape[1])))
+    data = list(map(lambda x: np.transpose(data[:,x]), range(data.shape[1])))
     return model.transform(data)
 
 def GetReductionErrors(trained_model, original, samples):
-    components = trained_model.get_params()
+    components = trained_model.components_
     print(type(components))
-    print('W')
-    print(type(components['W']))
-    print(components['W'])
-    print('H')
-    print(type(components['H']))
-    print(components['H'])
-    for i in np.linspace(0, np.linalg.matrix_rank(original), samples):
-        pass
+    print(components.size)
+    #return trained_model.reconstruction_err_
 
 
