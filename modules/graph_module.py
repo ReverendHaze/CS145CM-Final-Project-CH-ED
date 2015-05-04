@@ -56,12 +56,12 @@ def GraphHexbin(df, city):
     MapSetUp(df, hexbin_or_cluster=hexbin, city=city)
 
 
-def GraphClusters(df, city, how):
+def GraphClusters(df, city, how='KMeans'):
 
-    MapSetUp(df, hexbin_or_cluster=hexbin, city=city, how)
+    MapSetUp(df, hexbin_or_cluster=hexbin, city=city, how=how)
 
 
-def MapSetUp(df, hexbin_or_cluster, city, how):
+def MapSetUp(df, hexbin_or_cluster, city, how='KMeans'):
 
     latmin = df['latitude'].min()
     latmax = df['latitude'].max()
