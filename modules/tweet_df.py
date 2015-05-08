@@ -6,7 +6,7 @@ import natsort
 import os
 import shelve
 
-from debug_module import *
+from modules.debug_module import *
 
 CHICAGO_DF = 'out/chicago.pickle'
 HOUSTON_DF = 'out/houston.pickle'

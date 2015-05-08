@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 from math import log
 from collections import Counter
 
-from debug_module import *
-from tokenizer import tokenizeRawTweetText as tokenize
+from modules.debug_module import *
+from modules.tokenizer import tokenizeRawTweetText as tokenize
 
 OUT_FOLDER = 'out'
 
