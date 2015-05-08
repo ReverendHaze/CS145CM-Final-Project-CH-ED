@@ -9,7 +9,8 @@ import scipy.sparse as sp
 from modules.debug_module import *
 import modules.ngram_module as ngram_module
 
-def Histogram(df, city, n_days=0, n_hours=2, n_minutes=0):
+#def Histogram(df, city, n_days=0, n_hours=2, n_minutes=0):
+def Histogram(df, city, n_days=0, n_hours=0, n_minutes=15):
 
     # create empty dictionary of histograms
     histograms = {}
@@ -27,7 +28,6 @@ def Histogram(df, city, n_days=0, n_hours=2, n_minutes=0):
     # Last tweet received
     #t_max = df.index.max()
 
-    #n_steps = 168
     n_steps = (t_max-t_start)/t_step
 
     df=df[df.index >= t_start]
@@ -36,11 +36,8 @@ def Histogram(df, city, n_days=0, n_hours=2, n_minutes=0):
 
     t_end = t_start + t_step
     i=0
-    tprint('beginning while loop')
+    tprint('Beginning Histogram loop')
     while t_end <= t_max:
-
-        tprint(t_end)
-
         # get dictionary of bigrams and their frequency within the timestep
         window_df = df[df.index < t_end]
         freq_dict = ngram_module.BuildCounter(window_df)
@@ -63,19 +60,29 @@ def Histogram(df, city, n_days=0, n_hours=2, n_minutes=0):
         i=i+1
         t_end = t_start + t_step
 
+    counts = []
+    for idx in range(i):
+        try:
+            counts.append(log(len(list(filter(lambda y: len(histograms[y]) > idx, histograms.keys())))))
+        except:
+            break
+
+
     # Plot sensitivity of remaining bigrams vs cutoff
-    plt.plot(list(map(lambda x: log(len(list(filter(lambda y: len(histograms[y]) > x, histograms.keys())))), range(i))))
-    plt.savefig('graph_{}.png'.format(city))
+    plt.plot(counts, range(len(counts)))
+    plt.savefig('out/ngrams_by_cutoff_{}.png'.format(city))
+    plt.clf()
 
     # Remove bigrams that don't occur in enough periods
-    cutoff = 70
-    #cutoff = 6
+    cutoff = 50
     bigrams = list(filter(lambda x: len(histograms[x]) > cutoff, histograms.keys()))
     histograms = { x: histograms[x] for x in bigrams }
 
-    # Unite in one dataframe in csr format for easy manipulations
+    # Unite in one dataframe and standardize by column standard deviation.
     tprint('Number of bigrams: {}'.format(len(bigrams)))
     df = pd.DataFrame(histograms).dropna(how='all', axis=1)
+    df = pd.DataFrame(histograms).dropna(how='all', axis=0)
+    df = df.apply(lambda x: x/x.std(),axis=0)
 
     return df
 

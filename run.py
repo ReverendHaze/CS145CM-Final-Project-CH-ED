@@ -39,16 +39,16 @@ def main():
         master_df.index = master_df['created_at'].apply(lambda x: datetime.datetime.strptime(x, "%a %b %d %H:%M:%S %z %Y"))
 
         # Graph tweet rate over time
-        #graph_module.GraphFreqs(master_df, city=city)
+        graph_module.GraphFreqs(master_df, city=city)
 
         # Graph the number of tweets within each part of each city
-        #graph_module.GraphHexBin(master_df, city)
+        graph_module.GraphHexBin(master_df, city)
 
         #Graph clusters with KMeans and Spectral Clustering
-        #tprint('Generating and graphing kmeans clusters')
-        #cluster_module.GetClusters(master_df, city, n_clusters=12, how='kmeans')
-        #tprint('Generating and graphing spectral clusters')
-        #cluster_module.GetClusters(master_df, city, n_clusters=12, how='spectral')
+        tprint('Generating and graphing kmeans clusters')
+        cluster_module.GetClusters(master_df, city, n_clusters=12, how='kmeans')
+        tprint('Generating and graphing spectral clusters')
+        cluster_module.GetClusters(master_df, city, n_clusters=12, how='spectral')
 
         #Temporal histogram calculation
         hist_df = burst_module.Histogram(master_df, city)
@@ -57,22 +57,15 @@ def main():
         tprint('Current matrix dimensions: {}'.format(hist_mat.shape))
         tprint('Pre-reduction matrix rank: {}'.format(hist_rank))
 
-        approx_rank = 40
+        approx_rank = 50
         # dimensionality reduction
         for method in ['NMF', 'PCA']:
             tprint('Starting {}'.format(method))
             filename = 'out/{}_{}_{}.pickle'.format(method, city, approx_rank)
-            if not os.path.isfile(filename):
-                model = dim_module.GetTrainedModel(hist_mat, approx_rank, method)
-                with open(filename, 'wb+') as f:
-                    pickle.dump(model, f)
-            else:
-                with open(filename, 'rb') as f:
-                    model = pickle.load(f)
+            model = dim_module.GetTrainedModel(hist_mat, approx_rank, method)
             if method is 'NMF':
-                topics = dim_module.GetTopics(model, 5, hist_df.columns)
+                topics = dim_module.GetTopics(model, 5, hist_df.columns.values)
         tprint(topics)
-
 
 # Helper function to make the directory
 def mkdir(folder):

@@ -16,6 +16,9 @@ def TransformData(data, trained_model):
 def GetTopics(trained_model, ng_per_topic, name_list):
     res = {}
     for index, topic in enumerate(trained_model.components_):
+        print(type(topic))
+        print(len(topic))
+        print(topic)
         topic_indices = topic.argsort()[:-ng_per_topic-1:-1]
         res[index] = list(map(lambda x: name_list[x], topic_indices))
     return res
