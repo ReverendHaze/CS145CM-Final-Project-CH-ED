@@ -3,38 +3,69 @@
 # Prepackaged modules
 import pickle
 import os
+import datetime
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
 # Our modules
-import tweet_df
-import graph_module
-import cluster_module
+import modules.tweet_df as tweet_df
+import modules.graph_module as graph_module
+import modules.cluster_module as cluster_module
+import modules.ngram_module as ngram_module
+import modules.burst_module as burst_module
+import modules.dimension_module as dim_module
+from modules.debug_module import *
+
+SAMPLE_SIZE = 1000000
 
 # Code to execute when the script is run
 def main():
 
-    # Get the dataframe of all tweets, creating it from
-    # the data files if necessary and building
+    # Build the dataframes for all tweets, creating
+    # them from the data files if necessary and building
     # incrementally with new files.
-    master_df = tweet_df.GetTweetDF()
+    tweet_df.MakeTweetDF()
+    #
+    # define dictionaries for bursty tweet lists and zscore dfs
+    for city in 'Chicago', 'Houston', 'LA':
+        master_df = tweet_df.GetCity(city)
+        master_df['id'] = master_df.index
+        tprint('Tweets for {}: {}'.format(city, len(master_df.index)))
+        if len(master_df.index.values) > SAMPLE_SIZE:
+            sample_ids = np.random.choice(master_df.index.values, SAMPLE_SIZE)
+            master_df = master_df.ix[sample_ids]
+            tprint('Cut down to {} tweets'.format(SAMPLE_SIZE))
+        master_df.index = master_df['created_at'].apply(lambda x: datetime.datetime.strptime(x, "%a %b %d %H:%M:%S %z %Y"))
 
-    # Graph the number of tweets per minute over all data
-    graph_module.GraphFreqs(master_df)
-
-    # Remove non-geocoded tweets
-    master_df = master_df.dropna(subset=['longitude', 'latitude'])
-    master_df['City'] = master_df.apply(InCity, axis=1)
-
-    # (Uncomment/Comment) to (restore/remove) datapoints outside of the
-    # three desired cities from the dataset.
-    master_df = master_df[master_df['City'] != 'Other']
-
-    for index, df in master_df.groupby('City'):
         # Graph tweet rate over time
-        graph_module.GraphFreqs(df, city=index)
+        graph_module.GraphFreqs(master_df, city=city)
 
         # Graph the number of tweets within each part of each city
-        centers = cluster_module.ApplyKMeans(df, ['longitude', 'latitude'], 6)
-        graph_module.GraphClusteredHexbin(df, centers, index)
+        graph_module.GraphHexBin(master_df, city)
+
+        #Graph clusters with KMeans and Spectral Clustering
+        tprint('Generating and graphing kmeans clusters')
+        cluster_module.GetClusters(master_df, city, n_clusters=12, how='kmeans')
+        tprint('Generating and graphing spectral clusters')
+        cluster_module.GetClusters(master_df, city, n_clusters=12, how='spectral')
+
+        #Temporal histogram calculation
+        hist_df = burst_module.Histogram(master_df, city)
+        hist_mat = hist_df.as_matrix()
+        hist_rank = np.linalg.matrix_rank(hist_mat)
+        tprint('Current matrix dimensions: {}'.format(hist_mat.shape))
+        tprint('Pre-reduction matrix rank: {}'.format(hist_rank))
+
+        approx_rank = 50
+        # dimensionality reduction
+        for method in ['NMF', 'PCA']:
+            tprint('Starting {}'.format(method))
+            filename = 'out/{}_{}_{}.pickle'.format(method, city, approx_rank)
+            model = dim_module.GetTrainedModel(hist_mat, approx_rank, method)
+            if method is 'NMF':
+                topics = dim_module.GetTopics(model, 5, hist_df.columns.values)
+        tprint(topics)
 
 # Helper function to make the directory
 def mkdir(folder):
@@ -43,23 +74,6 @@ def mkdir(folder):
     except:
         pass
 
-def InCity(tweet):
-    ch_minlon, ch_maxlon, ch_minlat, ch_maxlat = [ -87.94,  -87.52, 41.64, 42.02]
-    la_minlon, la_maxlon, la_minlat, la_maxlat = [-118.66, -118.16, 33.70, 34.34]
-    ho_minlon, ho_maxlon, ho_minlat, ho_maxlat = [ -95.79,  -95.01, 29.52, 30.11]
-
-    lon = tweet['longitude']
-    lat = tweet['latitude']
-
-    if (ch_minlon <= lon <= ch_maxlon) and (ch_minlat <= lat <= ch_maxlat):
-        return 'Chicago'
-    if (ho_minlon <= lon <= ho_maxlon) and (ho_minlat <= lat <= ho_maxlat):
-        return 'Houston'
-    if (la_minlon <= lon <= la_maxlon) and (la_minlat <= lat <= la_maxlat):
-        return 'LA'
-    else:
-        return 'Other'
-
 if __name__ == '__main__':
-    main()
+    master_df = main()
 
