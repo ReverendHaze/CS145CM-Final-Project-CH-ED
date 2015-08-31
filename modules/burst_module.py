@@ -5,88 +5,74 @@ import matplotlib.pyplot as plt
 from math import log
 import pytz
 import scipy.sparse as sp
+from multiprocessing import Pool
+from multiprocessing import cpu_count
 
 from modules.debug_module import *
 import modules.ngram_module as ngram_module
 
-#def Histogram(df, city, n_days=0, n_hours=2, n_minutes=0):
-def Histogram(df, city, n_days=0, n_hours=0, n_minutes=15):
+T_START = pytz.utc.localize(datetime.datetime(year=2015, month=3, day=24, hour=0))
+T_STEP_MIN = 30 # Must be a factor of 60 for now
+
+#PERIOD_CUTOFF = 20
+PERIOD_CUTOFF = 3
+
+def Histogram(df, city):
 
     # create empty dictionary of histograms
     histograms = {}
 
-    # define timestep
-    t_step = datetime.timedelta(days=n_days, minutes=n_minutes, hours=n_hours)
-
     # loop over df by timestep
-    t_start = pytz.utc.localize(datetime.datetime(year=2015, month=3, day=24, hour=0))
     # Three possible tmax's
     # One day after the start for testing
     #t_max = pytz.utc.localize(datetime.datetime(year=2015, month=3, day=25, hour=0))
     # End of two week window in which we have continuous data
     t_max = pytz.utc.localize(datetime.datetime(year=2015, month=4, day=7, hour=0))
     # Last tweet received
-    #t_max = df.index.max()
-
-    n_steps = (t_max-t_start)/t_step
-
-    df=df[df.index >= t_start]
-    df=df[df.index <= t_max]
+    #t_max = df.index.max().astimezone('utc')
 
 
-    t_end = t_start + t_step
-    i=0
-    tprint('Beginning Histogram loop')
-    while t_end <= t_max:
-        # get dictionary of bigrams and their frequency within the timestep
-        window_df = df[df.index < t_end]
-        freq_dict = ngram_module.BuildCounter(window_df)
+    df = df[df.index >= T_START]
+    df = df[df.index <= t_max]
 
-        # remove current timestep from df and update end of next timestep
-        df = df[df.index >= t_start]
-        t_start = t_end
+    df.index = df.index.map(lambda x: x - datetime.timedelta(minutes=(x.minute % T_STEP_MIN)))
+    df = [ value for key, value in df.groupby(df.index) ]
 
-        not_observed = list(histograms.keys())
-
-        # add that timestep's output to main histogram dictionary
-        for key in freq_dict.keys():
-            value = freq_dict[key]
-            if key in histograms:
-                histograms[key][0,i] = value
-            else:
-                histograms[key] = sp.dok_matrix((1,n_steps))
-                histograms[key][0,i] = value
-
-        i=i+1
-        t_end = t_start + t_step
-
-    counts = []
-    for idx in range(i):
-        try:
-            counts.append(log(len(list(filter(lambda y: len(histograms[y]) > idx, histograms.keys())))))
-        except:
-            break
-
-
-    # Plot sensitivity of remaining bigrams vs cutoff
-    plt.plot(counts, range(len(counts)))
-    plt.savefig('out/ngrams_by_cutoff_{}.png'.format(city))
-    plt.clf()
+    tprint('Dataframe partitioned, building counters')
+    # Build a list of (word, frequency) dictionaries, one for each
+    # partition of the dataframe. Then convert these dictionaries to a
+    # dataframe.
+    p = Pool(cpu_count())
+    df = p.map_async(ngram_module.BuildCounter, df).get()
+    tprint('Converting to DataFrames')
+    df = p.map_async(FreqDictToDF, enumerate(df)).get()
+    p.close()
+    tprint('Combining DataFrames')
+    ret = pd.DataFrame(df.pop(0))
+    for index in np.arange(len(df)-1):
+        ret = pd.concat([ret, df.pop(0)], axis=1)
+        tprint(ret.shape)
+    #df = pd.concat(df, axis=0, join='outer').fillna(0)
 
     # Remove bigrams that don't occur in enough periods
-    cutoff = 50
-    bigrams = list(filter(lambda x: len(histograms[x]) > cutoff, histograms.keys()))
-    histograms = { x: histograms[x] for x in bigrams }
+    ret['counts'] = ret.apply(lambda x: x.sum()/(x != 0).sum(), axis=0)
+    ret = ret[ret['counts'] > PERIOD_CUTOFF]
+    del ret['counts']
 
     # Unite in one dataframe and standardize by column standard deviation.
-    tprint('Number of bigrams: {}'.format(len(bigrams)))
-    df = pd.DataFrame(histograms).dropna(how='all', axis=1)
-    df = pd.DataFrame(histograms).dropna(how='all', axis=0)
-    df = df.apply(lambda x: x/x.std(),axis=0)
+    ret = ret.apply(lambda x: x/x.std(),axis=0)
 
-    return df
+    return ret.to_sparse(fill_value=0)
 
 
+def FreqDictToDF(key_dict):
+    (key, hist_slice) = key_dict
+    d = pd.DataFrame.from_dict(hist_slice, orient='index')
+    try:
+        d.columns = [key]
+        return d
+    except:
+        return pd.DataFrame()
 
 # BurstyBigrams = function to obtain list of bursty bigrams for the last timestep in a window
 # inputs:
@@ -107,7 +93,7 @@ def BurstyBigrams(scores, cutoff=1.64):
             if score >= cutoff:
                 bursty.append(bigram)
         except:
-            print(bigram)
+            tprint(bigram)
 
     return bursty
 
