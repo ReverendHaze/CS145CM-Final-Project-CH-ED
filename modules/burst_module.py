@@ -12,7 +12,7 @@ from modules.debug_module import *
 import modules.ngram_module as ngram_module
 
 T_START = pytz.utc.localize(datetime.datetime(year=2015, month=3, day=24, hour=0))
-T_STEP_MIN = 30 # Must be a factor of 60 for now
+T_STEP_MIN = 30 # Must be factor of 60
 
 #PERIOD_CUTOFF = 20
 PERIOD_CUTOFF = 3
@@ -31,22 +31,31 @@ def Histogram(df, city):
     # Last tweet received
     #t_max = df.index.max().astimezone('utc')
 
-
+    # Screen out values outside of our window
+    tprint('Cutting DataFrame down to {} - {}'.format(T_START, t_max))
     df = df[df.index >= T_START]
     df = df[df.index <= t_max]
 
-    df.index = df.index.map(lambda x: x - datetime.timedelta(minutes=(x.minute % T_STEP_MIN)))
-    df = [ value for key, value in df.groupby(df.index) ]
+    # Group to the nearest 30 minutes
+    tprint('Partitioning dataframe')
+    df = df.groupby([df.index.year, df.index.month, df.index.day, \
+                     df.index.hour, df.index.minute - (df.index.minute % T_STEP_MIN)])
+    df = [ value for key, value in df ]
+    tprint('Partitions: {}'.format(len(df)))
+
 
     tprint('Dataframe partitioned, building counters')
+
     # Build a list of (word, frequency) dictionaries, one for each
     # partition of the dataframe. Then convert these dictionaries to a
     # dataframe.
     p = Pool(cpu_count())
+    tprint('Building counters')
     df = p.map_async(ngram_module.BuildCounter, df).get()
     tprint('Converting to DataFrames')
     df = p.map_async(FreqDictToDF, enumerate(df)).get()
     p.close()
+
     tprint('Combining DataFrames')
     ret = pd.DataFrame(df.pop(0))
     for index in np.arange(len(df)-1):
@@ -61,6 +70,7 @@ def Histogram(df, city):
 
     # Unite in one dataframe and standardize by column standard deviation.
     ret = ret.apply(lambda x: x/x.std(),axis=0)
+    tprint(df.shape)
 
     return ret.to_sparse(fill_value=0)
 
