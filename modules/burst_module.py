@@ -58,10 +58,9 @@ def Histogram(df, city):
 
     tprint('Combining DataFrames')
     ret = pd.DataFrame(df.pop(0))
-    for index in np.arange(len(df)-1):
+    for _ in np.arange(len(ret)-2):
         ret = pd.concat([ret, df.pop(0)], axis=1)
         tprint(ret.shape)
-    #df = pd.concat(df, axis=0, join='outer').fillna(0)
 
     # Remove bigrams that don't occur in enough periods
     ret['counts'] = ret.apply(lambda x: x.sum()/(x != 0).sum(), axis=0)
@@ -70,7 +69,6 @@ def Histogram(df, city):
 
     # Unite in one dataframe and standardize by column standard deviation.
     ret = ret.apply(lambda x: x/x.std(),axis=0)
-    tprint(df.shape)
 
     return ret.to_sparse(fill_value=0)
 
