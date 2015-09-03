@@ -5,6 +5,7 @@ from sklearn.decomposition import PCA
 
 def GetTrainedModel(data, rank, how):
     if how is 'NMF':
+        #return NMF(n_components=rank, init='nndsvd', max_iter=200, nls_max_iter=2000, tol=0.0001, sparseness='components').fit(data)
         return NMF(n_components=rank, init='nndsvd', max_iter=200, nls_max_iter=2000, tol=0.0001, sparseness='components').fit(data)
     elif how is 'PCA':
         return PCA(n_components=rank, copy=True, whiten=True).fit(data)

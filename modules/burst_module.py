@@ -12,10 +12,9 @@ from modules.debug_module import *
 import modules.ngram_module as ngram_module
 
 T_START = pytz.utc.localize(datetime.datetime(year=2015, month=3, day=24, hour=0))
-T_STEP_MIN = 30 # Must be factor of 60
+T_STEP_MIN = 15 # Must be factor of 60
 
-#PERIOD_CUTOFF = 20
-PERIOD_CUTOFF = 3
+PERIOD_CUTOFF = 20
 
 def Histogram(df, city):
 
@@ -58,19 +57,26 @@ def Histogram(df, city):
 
     tprint('Combining DataFrames')
     ret = pd.DataFrame(df.pop(0))
-    for _ in np.arange(len(ret)-2):
-        ret = pd.concat([ret, df.pop(0)], axis=1)
-        tprint(ret.shape)
+    for _ in np.arange(len(ret)):
+        try:
+            ret = pd.concat([ret, df.pop(0)], axis=1)
+        except:
+            pass
+    tprint('Shape after combining dataframes: {}'.format(ret.shape))
 
     # Remove bigrams that don't occur in enough periods
-    ret['counts'] = ret.apply(lambda x: x.sum()/(x != 0).sum(), axis=0)
-    ret = ret[ret['counts'] > PERIOD_CUTOFF]
+    ret['counts'] = ret.count(axis=1)
+    #ret['counts'] = ret.apply(lambda x: np.sum(x)/np.sum(x != 0), axis=0)
+    tprint('Cutting down DataFrame')
+    ret = ret[ret.counts >= PERIOD_CUTOFF].fillna(0)
     del ret['counts']
+    tprint('Remaining bigrams: {}'.format(ret.shape[0]))
 
     # Unite in one dataframe and standardize by column standard deviation.
-    ret = ret.apply(lambda x: x/x.std(),axis=0)
+    #ret = ret.apply(lambda x: x/x.std(),axis=1)
+    ret = ret.div(ret.std(axis=1), axis=0)
 
-    return ret.to_sparse(fill_value=0)
+    return ret.fillna(0).to_sparse(fill_value=0)
 
 
 def FreqDictToDF(key_dict):
