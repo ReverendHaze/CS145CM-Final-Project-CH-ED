@@ -62,9 +62,9 @@ def main():
 
             #Temporal histogram calculation
             hist_df = burst_module.Histogram(master_df, city)
+            with open(hist_filename, 'wb+') as f:
+                pickle.dump(hist_df, f)
         tprint('Finished building histograms, saving file...')
-        with open(hist_filename, 'wb+') as f:
-            pickle.dump(hist_df, f)
         tprint('Converting to matrix')
         hist_mat = hist_df.as_matrix()
         tprint('Finding matrix rank')
@@ -77,9 +77,10 @@ def main():
         tprint('Starting Sparse NMF')
         filename = 'out/NMF_{}_{}.pickle'.format(city, approx_rank)
         tprint('hist_mat shape pre-reduction: {}'.format(hist_mat.shape))
-        model = dim_module.GetTrainedModel(hist_mat, approx_rank, 'NMF')
+        model = dim_module.GetTrainedModel(hist_mat.transpose(), approx_rank, 'NMF')
         topics = dim_module.GetTopics(model, 4, hist_df.index.values)
         tprint(topics)
+
 
 # Helper function to make the directory
 def mkdir(folder):

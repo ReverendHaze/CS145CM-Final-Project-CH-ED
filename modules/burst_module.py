@@ -14,7 +14,7 @@ import modules.ngram_module as ngram_module
 T_START = pytz.utc.localize(datetime.datetime(year=2015, month=3, day=24, hour=0))
 T_STEP_MIN = 15 # Must be factor of 60
 
-PERIOD_CUTOFF = 20
+PERIOD_CUTOFF = 10
 
 def Histogram(df, city):
 
@@ -41,7 +41,6 @@ def Histogram(df, city):
                      df.index.hour, df.index.minute - (df.index.minute % T_STEP_MIN)])
     df = [ value for key, value in df ]
     tprint('Partitions: {}'.format(len(df)))
-
 
     tprint('Dataframe partitioned, building counters')
 
