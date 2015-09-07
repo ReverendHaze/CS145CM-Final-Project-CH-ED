@@ -7,6 +7,7 @@ import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from operator import itemgetter
 
 # Our modules
 import tweet_df as tweet_df
@@ -35,7 +36,6 @@ def main():
                 hist_df = pickle.load(f)
         except:
             master_df = tweet_df.GetCity(city)
-            #master_df['id'] = master_df.index
             master_df = master_df.dropna(axis=0, how='any', subset=['id', 'text', 'created_at'])
             master_df = master_df[(master_df['created_at'] != 'None')]
             tprint('Tweets for {}: {}'.format(city, len(master_df.index)))
@@ -49,10 +49,10 @@ def main():
             del master_df['created_at']
 
             # Graph tweet rate over time
-            #graph_module.GraphFreqs(master_df, city=city)
+            graph_module.GraphFreqs(master_df, city=city)
 
             # Graph the number of tweets within each part of each city
-            #graph_module.GraphHexBin(master_df, city)
+            graph_module.GraphHexBin(master_df, city)
 
             #Graph clusters with KMeans and Spectral Clustering
             #tprint('Generating and graphing kmeans clusters')
@@ -72,13 +72,14 @@ def main():
         tprint('Current matrix dimensions: {}'.format(hist_mat.shape))
         tprint('Pre-reduction matrix rank: {}'.format(hist_rank))
 
-        approx_rank = 75
+        approx_rank = 100
         # dimensionality reduction
         tprint('Starting Sparse NMF')
         filename = 'out/NMF_{}_{}.pickle'.format(city, approx_rank)
         tprint('hist_mat shape pre-reduction: {}'.format(hist_mat.shape))
         model = dim_module.GetTrainedModel(hist_mat.transpose(), approx_rank, 'NMF')
         topics = dim_module.GetTopics(model, 4, hist_df.index.values)
+        topics = sorted([ topics[key] for key in topics.keys() ], key=lambda x: x[0], reverse=True)
         tprint(topics)
 
 
