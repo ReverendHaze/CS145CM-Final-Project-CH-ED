@@ -5,8 +5,12 @@ import glob
 import natsort
 import os
 import shelve
+from multiprocessing import Pool
+from multiprocessing import cpu_count
 
 from modules.debug_module import *
+
+POOL_WORKERS = cpu_count()
 
 CHICAGO_DF = 'out/chicago.pickle'
 HOUSTON_DF = 'out/houston.pickle'
@@ -39,22 +43,32 @@ def MakeTweetDF():
     if not (os.path.exists(CHICAGO_DF) and \
             os.path.exists(HOUSTON_DF) and \
             os.path.exists(LA_DF)):
+        tprint('Failed, creating new master pickles')
+        rm(CHICAGO_DF)
+        rm(HOUSTON_DF)
+        rm(LA_DF)
+        rm(CONFIG_FILE)
         CreateTweetDF(in_files)
     else:
         config = shelve.open(CONFIG_FILE)
-        tprint('Files in master dataframes: {}'.format(config['converted_files']))
+        converted_files = config['converted_files']
+        config.close()
+        tprint('Files in master dataframes: {}'.format(len(converted_files)))
         tprint('Files in data folder: {}'.format(len(in_files)))
-        if len(in_files) > config['converted_files'] + 24: #4 hours
+        if len(in_files) > len(converted_files) + 50:
             tprint('Updating with new input files...')
-            return UpdateTweetDF(in_files, config['converted_files'])
+            return UpdateTweetDF(in_files, converted_files)
         else:
             tprint('Not enough new input files to warrant concatenation. Done.')
 
+
 def CreateTweetDF(in_files):
-    tprint('Failed, creating new master pickles')
-    dfs = list(map(lambda x: TweetsToDF(pd.read_pickle(x)), in_files))
+    p = Pool(POOL_WORKERS)
+    dfs = p.map_async(TweetsToDF, in_files).get()
+    p.close()
     master_df = pd.concat(dfs)
     master_df.loc[:,'city'] = master_df.apply(InCity, axis=1)
+
     tprint('Writing master pickles to files')
     with open(CHICAGO_DF, 'wb+') as f:
         pickle.dump(master_df[master_df['city'] == 'Chicago'], f)
@@ -65,65 +79,78 @@ def CreateTweetDF(in_files):
     with open(LA_DF, 'wb+') as f:
         pickle.dump(master_df[master_df['city'] == 'LA'], f)
     tprint('Wrote LA DF')
+
     config = shelve.open(CONFIG_FILE)
-    config['converted_files'] = len(in_files)
+    config['converted_files'] = in_files
     config.close()
 
 
-def UpdateTweetDF(in_files, master_df_files):
-    tprint('Updating with {} new data files'.format(len(in_files)-master_df_files))
-    total_files = len(in_files)
-    in_files = natsort.natsorted(in_files[master_df_files:], key=lambda y: y.lower())
-    dfs = []
-    for index, in_file in enumerate(in_files):
-        tprint('Reading file {}'.format(index))
-        tweets = pd.read_pickle(in_file)
-        dfs.append(TweetsToDF(tweets))
+def UpdateTweetDF(in_files, converted_files):
+    tprint('Updating with {} new data files'.format(len(in_files)-len(converted_files)))
+    in_files = [ x for x in in_files if x not in converted_files ]
+    p = Pool(POOL_WORKERS)
+    dfs = p.map_async(TweetsToDF, in_files).get()
+    p.close()
     tprint('Concatenating files...')
     dfs = pd.concat(dfs)
     dfs.loc[:,'city'] = dfs.apply(InCity, axis=1)
+
     tprint('Writing updated master dfs')
+    df = pd.read_pickle(CHICAGO_DF)
+    chicago_mask = dfs['city'] == 'Chicago'
     with open(CHICAGO_DF, 'rb+') as f:
-        df = pd.read_pickle(f)
-        chicago_mask = dfs['city'] == 'Chicago'
-        pickle.dump(pd.concat([df, dfs[chicago_mask]], f))
-        dfs = dfs[~chicago_mask]
+        chi = dfs[chicago_mask]
+        pickle.dump(pd.concat([df, dfs[chicago_mask]]), f)
+    dfs = dfs[~chicago_mask]
     tprint('Completed Chicago DF')
+
+    df = pd.read_pickle(HOUSTON_DF)
+    houston_mask = dfs['city'] == 'Houston'
     with open(HOUSTON_DF, 'rb+') as f:
-        df = pd.read_pickle(f)
-        houston_mask = dfs['city'] == 'Houston'
-        pickle.dump(pd.concat([df, dfs[houston_mask]], f))
-        dfs = dfs[~houston_mask]
+        pickle.dump(pd.concat([df, dfs[houston_mask]]), f)
+    dfs = dfs[~houston_mask]
     tprint('Completed Houston DF')
+
+    df = pd.read_pickle(LA_DF)
     with open(LA_DF, 'rb+') as f:
-        df = pd.read_pickle(f)
-        pickle.dump(pd.concat([df, dfs], f))
+        pickle.dump(pd.concat([df, dfs]), f)
     tprint('Completed LA DF')
+
     config = shelve.open(CONFIG_FILE)
-    config['converted_files'] = len(in_files)
+    config['converted_files'] = in_files + converted_files
     config.close()
 
+
 def TweetsToDF(tweets):
+    tweets = pd.read_pickle(tweets)
     tweets_dict = {}
-    tweet_params = ['id', 'text', 'retweeted', 'created_at']
-    user_params = ['id', 'followers_count', 'statuses_count', \
-                   'friends_count', 'lang']
+
+    #Full set of potentially interesting params
+    #tweet_params = ['id', 'text', 'retweeted', 'created_at']
+    #user_params = ['id', 'followers_count', 'statuses_count', \
+    tweet_params = ['id', 'text', 'created_at']
+    user_params = []
+
     for param in tweet_params:
-        tweets_dict[param] = list(map(lambda x: str(x[param]), tweets))
+        try:
+            tweets_dict[param] = list(map(lambda twt: str(LookDefault(twt, param, None)), tweets))
+        except:
+            tweets_dict[param] = list(map(lambda twt: str(LookDefault(twt, param, None)), tweets))
+
     for param in user_params:
         tweets_dict['u_{}'.format(param)] = \
-                list(map(lambda x: str(x['user'][param]), tweets))
+                list(map(lambda x: str(LookDefault(x, 'user', None, sec=param)), tweets))
 
     #Handle coordinates and hashtags separately since they require different \
     #parsing
     tweets_dict['longitude'], tweets_dict['latitude'] = \
             zip(*list(map(GetCoords, tweets)))
 
-    tweets_dict['hashtags'] = list(map(GetHashtags, tweets))
-    tweets_dict['sentiment'] = list(map(GetSentiment, tweets))
+    #Uncomment if we ever use these
+    #tweets_dict['hashtags'] = list(map(GetHashtags, tweets))
+    #tweets_dict['sentiment'] = list(map(GetSentiment, tweets))
+    return pd.DataFrame(tweets_dict, index=tweets_dict['id']).dropna(axis=0, how='all')
 
-    #Filter out those tweets we got that aren't in a box
-    return pd.DataFrame(tweets_dict, index=tweets_dict['id'])
 
 def GetCoords(tweet):
     try:
@@ -137,16 +164,29 @@ def GetHashtags(tweet):
     except:
         return None
 
-def GetSentiment(tweet):
-    twt_str = tweet['text'].split(' ')
-    for token in twt_str:
-        if token in SMILE_EMOTICONS + LAUGHING_EMOTICONS +\
-                    SMIRK_EMOTICONS:
-            return 1
-        elif token in FROWN_EMOTICONS + HORROR_EMOTICONS:
-            return -1
+def LookDefault(dictionary, key, default, sec=None):
+    try:
+        if sec:
+            return dictionary[key][sec]
         else:
-            return 0
+            return dictionary[key]
+    except:
+        tprint('Lookup of {} failed.'.format(key))
+        return default
+
+def GetSentiment(tweet):
+    try:
+        twt_str = tweet['text'].split(' ')
+        for token in twt_str:
+            if token in SMILE_EMOTICONS + LAUGHING_EMOTICONS +\
+                        SMIRK_EMOTICONS:
+                return 1
+            elif token in FROWN_EMOTICONS + HORROR_EMOTICONS:
+                return -1
+            else:
+                return 0
+    except:
+        return 0
 
 def InCity(tweet):
     try:
@@ -162,3 +202,8 @@ def InCity(tweet):
         pass
     return 'Other'
 
+def rm(filename):
+    try:
+        os.remove(filename)
+    except:
+        pass
