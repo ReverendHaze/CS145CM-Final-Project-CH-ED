@@ -43,7 +43,7 @@ def MakeTweetDF():
     if not (os.path.exists(CHICAGO_DF) and \
             os.path.exists(HOUSTON_DF) and \
             os.path.exists(LA_DF)):
-        tprint('Failed, creating new master pickles')
+        Logger.tprint('Failed, creating new master pickles')
         rm(CHICAGO_DF)
         rm(HOUSTON_DF)
         rm(LA_DF)
@@ -53,13 +53,13 @@ def MakeTweetDF():
         config = shelve.open(CONFIG_FILE)
         converted_files = config['converted_files']
         config.close()
-        tprint('Files in master dataframes: {}'.format(len(converted_files)))
-        tprint('Files in data folder: {}'.format(len(in_files)))
+        Logger.tprint('Files in master dataframes: {}'.format(len(converted_files)))
+        Logger.tprint('Files in data folder: {}'.format(len(in_files)))
         if len(in_files) > len(converted_files) + 50:
-            tprint('Updating with new input files...')
+            Logger.tprint('Updating with new input files...')
             return UpdateTweetDF(in_files, converted_files)
         else:
-            tprint('Not enough new input files to warrant concatenation. Done.')
+            Logger.tprint('Not enough new input files to warrant concatenation. Done.')
 
 
 def CreateTweetDF(in_files):
@@ -69,16 +69,16 @@ def CreateTweetDF(in_files):
     master_df = pd.concat(dfs)
     master_df.loc[:,'city'] = master_df.apply(InCity, axis=1)
 
-    tprint('Writing master pickles to files')
+    Logger.tprint('Writing master pickles to files')
     with open(CHICAGO_DF, 'wb+') as f:
         pickle.dump(master_df[master_df['city'] == 'Chicago'], f)
-    tprint('Wrote Chicago DF')
+    Logger.tprint('Wrote Chicago DF')
     with open(HOUSTON_DF, 'wb+') as f:
         pickle.dump(master_df[master_df['city'] == 'Houston'], f)
-    tprint('Wrote Houston DF')
+    Logger.tprint('Wrote Houston DF')
     with open(LA_DF, 'wb+') as f:
         pickle.dump(master_df[master_df['city'] == 'LA'], f)
-    tprint('Wrote LA DF')
+    Logger.tprint('Wrote LA DF')
 
     config = shelve.open(CONFIG_FILE)
     config['converted_files'] = in_files
@@ -86,35 +86,35 @@ def CreateTweetDF(in_files):
 
 
 def UpdateTweetDF(in_files, converted_files):
-    tprint('Updating with {} new data files'.format(len(in_files)-len(converted_files)))
+    Logger.tprint('Updating with {} new data files'.format(len(in_files)-len(converted_files)))
     in_files = [ x for x in in_files if x not in converted_files ]
     p = Pool(POOL_WORKERS)
     dfs = p.map_async(TweetsToDF, in_files).get()
     p.close()
-    tprint('Concatenating files...')
+    Logger.tprint('Concatenating files...')
     dfs = pd.concat(dfs)
     dfs.loc[:,'city'] = dfs.apply(InCity, axis=1)
 
-    tprint('Writing updated master dfs')
+    Logger.tprint('Writing updated master dfs')
     df = pd.read_pickle(CHICAGO_DF)
     chicago_mask = dfs['city'] == 'Chicago'
     with open(CHICAGO_DF, 'rb+') as f:
         chi = dfs[chicago_mask]
         pickle.dump(pd.concat([df, dfs[chicago_mask]]), f)
     dfs = dfs[~chicago_mask]
-    tprint('Completed Chicago DF')
+    Logger.tprint('Completed Chicago DF')
 
     df = pd.read_pickle(HOUSTON_DF)
     houston_mask = dfs['city'] == 'Houston'
     with open(HOUSTON_DF, 'rb+') as f:
         pickle.dump(pd.concat([df, dfs[houston_mask]]), f)
     dfs = dfs[~houston_mask]
-    tprint('Completed Houston DF')
+    Logger.tprint('Completed Houston DF')
 
     df = pd.read_pickle(LA_DF)
     with open(LA_DF, 'rb+') as f:
         pickle.dump(pd.concat([df, dfs]), f)
-    tprint('Completed LA DF')
+    Logger.tprint('Completed LA DF')
 
     config = shelve.open(CONFIG_FILE)
     config['converted_files'] = in_files + converted_files
@@ -171,7 +171,7 @@ def LookDefault(dictionary, key, default, sec=None):
         else:
             return dictionary[key]
     except:
-        tprint('Lookup of {} failed.'.format(key))
+        Logger.tprint('Lookup of {} failed.'.format(key))
         return default
 
 def GetSentiment(tweet):

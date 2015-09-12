@@ -15,8 +15,6 @@ from collections import Counter
 from modules.debug_module import *
 from modules.tokenizer import tokenizeRawTweetText as tokenize
 
-OUT_FOLDER = 'out'
-
 #Takes in raw tweet text and builds a master counter for it.
 def BuildCounter(tweets, write_to_file=False):
     counter = functools.reduce(CombineCounters, map(BuildNGrams, tweets['text']), Counter())

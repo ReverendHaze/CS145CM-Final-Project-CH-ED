@@ -11,11 +11,6 @@ from multiprocessing import cpu_count
 from modules.debug_module import *
 import modules.ngram_module as ngram_module
 
-T_START = pytz.utc.localize(datetime.datetime(year=2015, month=3, day=24, hour=0))
-T_STEP_MIN = 15 # Must be factor of 60
-
-PERIOD_CUTOFF = 5
-
 def Histogram(df, city):
 
     # create empty dictionary of histograms
