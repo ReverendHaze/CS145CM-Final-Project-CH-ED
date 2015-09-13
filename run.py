@@ -17,6 +17,7 @@ import modules.ngram_module as ngram_module
 import modules.burst_module as burst_module
 import modules.dimension_module as dim_module
 from modules.debug_module import *
+from settings_manager import *
 
 # Code to execute when the script is run
 def main():
@@ -62,7 +63,7 @@ def main():
             #cluster_module.GetClusters(master_df, city, n_clusters=12, how='spectral')
 
             #Temporal histogram calculation
-            hist_df = burst_module.Histogram(master_df, city)
+            hist_df = burst_module.Histogram(master_df, city, config)
             with open(hist_filename, 'wb+') as f:
                 pickle.dump(hist_df, f)
         Logger.tprint('Finished building histograms, saving file...')
@@ -78,7 +79,7 @@ def main():
         Logger.tprint('Starting Sparse NMF')
         filename = 'out/NMF_{}_{}.pickle'.format(city, approx_rank)
         Logger.tprint('hist_mat shape pre-reduction: {}'.format(hist_mat.shape))
-        model = dim_module.GetTrainedModel(hist_mat.transpose(), approx_rank, 'NMF')
+        model = dim_module.GetTrainedModel(hist_mat.transpose(), approx_rank, 'NMF', config)
         Logger.tprint('Model trained. Reconstruciton error: {}'.format(model.reconstruction_err_))
         #dim_module.GetAreaPlot(model, city)
         topics = dim_module.GetTopics(model, 7, hist_df.index.values)

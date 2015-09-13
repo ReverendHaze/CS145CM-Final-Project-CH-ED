@@ -5,9 +5,9 @@ from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import random
 
-def GetTrainedModel(data, rank, how):
+def GetTrainedModel(data, rank, how, config):
     if how is 'NMF':
-        return NMF(n_components=rank, init='nndsvd', max_iter=200, nls_max_iter=2000, tol=0.0001, sparseness='components', BETA=0.7).fit(data)
+        return NMF(n_components=rank, init='nndsvd', max_iter=200, nls_max_iter=2000, tol=0.0001, sparseness='components', beta=config['BETA']).fit(data)
     elif how is 'PCA':
         return PCA(n_components=rank, copy=True, whiten=True).fit(data)
 
