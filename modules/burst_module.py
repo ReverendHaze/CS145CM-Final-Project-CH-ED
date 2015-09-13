@@ -11,12 +11,7 @@ from multiprocessing import cpu_count
 from modules.debug_module import *
 import modules.ngram_module as ngram_module
 
-T_START = pytz.utc.localize(datetime.datetime(year=2015, month=3, day=24, hour=0))
-T_STEP_MIN = 15 # Must be factor of 60
-
-PERIOD_CUTOFF = 5
-
-def Histogram(df, city):
+def Histogram(df, city, config):
 
     # create empty dictionary of histograms
     histograms = {}
@@ -31,14 +26,14 @@ def Histogram(df, city):
     #t_max = df.index.max().astimezone('utc')
 
     # Screen out values outside of our window
-    tprint('Cutting DataFrame down to {} - {}'.format(T_START, t_max))
-    df = df[df.index >= T_START]
+    tprint('Cutting DataFrame down to {} - {}'.format(config['T_START'], t_max))
+    df = df[df.index >= config['T_START']]
     df = df[df.index <= t_max]
 
     # Group to the nearest 30 minutes
     tprint('Partitioning dataframe')
     df = df.groupby([df.index.year, df.index.month, df.index.day, \
-                     df.index.hour, df.index.minute - (df.index.minute % T_STEP_MIN)])
+                     df.index.hour, df.index.minute - (df.index.minute % config['T_STEP_MIN'])])
     df = [ value for key, value in df ]
     tprint('Partitions: {}'.format(len(df)))
 
@@ -67,7 +62,7 @@ def Histogram(df, city):
     ret['counts'] = ret.count(axis=1)
     #ret['counts'] = ret.apply(lambda x: np.sum(x)/np.sum(x != 0), axis=0)
     tprint('Cutting down DataFrame')
-    ret = ret[ret.counts >= PERIOD_CUTOFF].fillna(0)
+    ret = ret[ret.counts >= config['PERIOD_CUTOFF']].fillna(0)
     del ret['counts']
     tprint('Remaining bigrams: {}'.format(ret.shape[0]))
 

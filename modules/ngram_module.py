@@ -15,18 +15,16 @@ from collections import Counter
 from modules.debug_module import *
 from modules.tokenizer import tokenizeRawTweetText as tokenize
 
-OUT_FOLDER = 'out'
-
 #Takes in raw tweet text and builds a master counter for it.
 def BuildCounter(tweets, write_to_file=False):
     counter = functools.reduce(CombineCounters, map(BuildNGrams, tweets['text']), Counter())
 
     if write_to_file:
-        with open('{}/word_counts.txt'.format(OUT_FOLDER), 'w+') as f:
+        with open('out/word_counts.txt', 'w+') as f:
             strings = map(lambda x: '{}: {}\n'.format(x[0], x[1]), counter.most_common())
             f.write(''.join(strings))
 
-        with open('{}/counter.pickle'.format(OUT_FOLDER), 'wb+') as f:
+        with open('out/counter.pickle', 'wb+') as f:
             pickle.dump(counter, f)
         tprint('    Wrote words file and counter pickle')
 
@@ -58,7 +56,7 @@ def GetIds(tokens, columns):
 
 def GetTopNGrams(master_df, n):
     try:
-        with open('{}/counter.pickle'.format(OUT_FOLDER), 'rb') as f:
+        with open('out/counter.pickle', 'rb') as f:
             counter = pickle.load(f)
             tprint('Loaded ngram counts from pickle.')
     except:
