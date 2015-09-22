@@ -45,10 +45,10 @@ def main():
             master_df = master_df.dropna(axis=0, how='any', subset=['id', 'text', 'created_at'])
             master_df = master_df[(master_df['created_at'] != 'None')]
             logger.tprint('Tweets for {}: {}'.format(city, len(master_df.index)))
-            if len(master_df.index.values) > config[SAMPLE_SIZE]:
-                sample_ids = np.random.choice(master_df.index.values, config[SAMPLE_SIZE])
+            if len(master_df.index.values) > config['SAMPLE_SIZE']:
+                sample_ids = np.random.choice(master_df.index.values, config['SAMPLE_SIZE'])
                 master_df = master_df.ix[sample_ids]
-                logger.tprint('Cut down to {} tweets'.format(config[SAMPLE_SIZE]))
+                logger.tprint('Cut down to {} tweets'.format(config['SAMPLE_SIZE']))
 
             master_df.index = master_df.apply(lambda x: datetime.datetime.strptime(x.created_at, "%a %b %d %H:%M:%S %z %Y"), axis=1)
             master_df = master_df[master_df['created_at'].notnull()]
