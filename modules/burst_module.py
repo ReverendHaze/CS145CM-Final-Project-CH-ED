@@ -11,7 +11,7 @@ from multiprocessing import cpu_count
 from modules.debug_module import Logger
 import modules.ngram_module as ngram_module
 
-def Histogram(df, city, config):
+def Histogram(df, city, config, how='std'):
 
     # create empty dictionary of histograms
     histograms = {}
@@ -55,19 +55,18 @@ def Histogram(df, city, config):
             pass
     logger.tprint('Shape after combining dataframes: {}'.format(ret.shape))
 
-    # Remove bigrams that don't occur in enough periods
-    ret['counts'] = ret.count(axis=1)
-    #ret['counts'] = ret.apply(lambda x: np.sum(x)/np.sum(x != 0), axis=0)
-    logger.tprint('Cutting down DataFrame')
-    periods = ret.shape[1]
-    ret = ret[ret.counts >= periods*config['MIN_PERIOD_CUTOFF']].fillna(0)
-    ret = ret[ret.counts <= periods*config['MAX_PERIOD_CUTOFF']].fillna(0)
-    del ret['counts']
-    logger.tprint('Remaining bigrams: {}'.format(ret.shape[0]))
 
-    # Unite in one dataframe and standardize by column standard deviation.
-    #ret = ret.apply(lambda x: x/x.std(),axis=1)
-    ret = ret.div(ret.std(axis=1), axis=0)
+    # Transform data using tf-idf
+    #ret = ret.div(ret.std(axis=1), axis=0)
+    periods = ret.shape[1]
+    ret['periods'] = ret.count(axis=1)
+    ret = ret.div(np.log(periods/ret.periods), axis='index')
+    del ret['periods']
+    logger.tprint('Shape after tf-idf: {}'.format(ret.shape))
+
+
+    ret = ret[~(ret == 0).all(axis=1)]
+    logger.tprint('Remaining bigrams: {}'.format(ret.shape[0]))
 
     return ret.fillna(0).to_sparse(fill_value=0)
 

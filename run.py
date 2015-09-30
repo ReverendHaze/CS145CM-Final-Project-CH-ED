@@ -52,10 +52,10 @@ def main():
 
             master_df.index = master_df.apply(lambda x: datetime.datetime.strptime(x.created_at, "%a %b %d %H:%M:%S %z %Y"), axis=1)
             master_df = master_df[master_df['created_at'].notnull()]
-            del master_df['created_at']
 
             # Graph tweet rate over time
-            #graph_module.GraphFreqs(master_df, city=city)
+            graph_module.GraphFreqs(master_df, city=city)
+            del master_df['created_at']
 
             # Graph the number of tweets within each part of each city
             #graph_module.GraphHexBin(master_df, city)
@@ -70,6 +70,25 @@ def main():
             hist_df = burst_module.Histogram(master_df, city, config)
             with open(hist_filename, 'wb+') as f:
                 pickle.dump(hist_df, f)
+
+        # Remove bigrams that don't occur in enough periods
+        periods = hist_df.shape[1]
+        logger.tprint('Periods in dataframe: {}'.format(periods))
+        logger.tprint('Cutting down DataFrame')
+
+        hist_df['periods'] = hist_df.apply(lambda x: x[x != 0].count(), axis=1)
+        assert((hist_df['periods'] <= (periods*config['MAX_PERIOD_CUTOFF'])).any())
+        hist_df = hist_df[hist_df['periods'] >= (periods*config['MIN_PERIOD_CUTOFF'])]
+        assert((hist_df['periods'] >= periods*config['MIN_PERIOD_CUTOFF']).any())
+        hist_df = hist_df[hist_df['periods'] <= (periods*config['MAX_PERIOD_CUTOFF'])]
+        del hist_df['periods']
+
+        hist_df['total'] = hist_df.sum(axis=1)
+        assert((hist_df['total'] <= (periods*config['MIN_COUNT_CUTOFF'])).any())
+        hist_df = hist_df[hist_df['total'] <= (periods*config['MIN_COUNT_CUTOFF'])]
+        print('df.shape: {}'.format(hist_df.shape))
+        del hist_df['total']
+
         logger.tprint('Finished building histograms, saving file...')
         logger.tprint('Converting to matrix')
         hist_mat = hist_df.as_matrix()

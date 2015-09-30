@@ -17,6 +17,10 @@ class Logger:
                 os.remove(self.logfile_name)
             except:
                 pass
+            try:
+                os.symlink(self.logfile_name, 'current.log')
+            except:
+                pass
             self.enabled = True
 
     def tprint(self, print_string):

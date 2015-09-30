@@ -28,9 +28,6 @@ def GraphFreqs(df, city=None, win_size_sec=300):
     df = df[['tweets_per_min']]
     df = df.sort()
 
-    print('df type is:')
-    print(type(df))
-
     # Make the plot, add niceties and save
     ax = df.plot()
     ax.set_xlabel('Time')
