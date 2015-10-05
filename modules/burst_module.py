@@ -29,10 +29,10 @@ class BurstModule:
 
         # Screen out values outside of our window
         self.logger.tprint('Cutting DataFrame down to {} - {}'.format(t_start, t_max))
-        df = df[df.index >= t_start]
-        df = df[df.index <= t_max]
+        df = df[df.index > t_start]
+        df = df[df.index < t_max]
 
-        # Group to the nearest 30 minutes
+        # Group to the nearest T_STEP_MIN minutes
         self.logger.tprint('Partitioning dataframe')
         df = df.groupby([df.index.year, df.index.month, df.index.day, \
                          df.index.hour, df.index.minute - (df.index.minute % config['T_STEP_MIN'])])
@@ -48,12 +48,12 @@ class BurstModule:
         self.logger.tprint('Building counters')
         df = p.map_async(ngram_module.BuildCounter, df).get()
         self.logger.tprint('Converting to DataFrames')
-        df = p.map_async(FreqDictToDF, enumerate(df)).get()
+        df = p.map_async(self.FreqDictToDF, enumerate(df)).get()
         p.close()
 
         self.logger.tprint('Combining DataFrames')
         ret = pd.DataFrame(df.pop(0))
-        for _ in np.arange(len(ret)):
+        for _ in np.arange(len(df)):
             try:
                 ret = pd.concat([ret, df.pop(0)], axis=1)
             except:
