@@ -38,10 +38,9 @@ def GetCity(city):
         master_df = pd.read_pickle(LA_DF)
     return master_df
 
-def MakeTweetDF():
+def MakeTweetDF(logger):
     in_files = glob.glob('{}/*.pickle'.format(DATA_FOLDER))
 
-    logger = Logger()
     if not (os.path.exists(CHICAGO_DF) and \
             os.path.exists(HOUSTON_DF) and \
             os.path.exists(LA_DF)):

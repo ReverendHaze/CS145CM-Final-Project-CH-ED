@@ -14,8 +14,8 @@ import tweet_df as tweet_df
 import modules.graph_module as graph_module
 import modules.cluster_module as cluster_module
 import modules.ngram_module as ngram_module
-import modules.burst_module as burst_module
 import modules.dimension_module as dim_module
+from modules.burst_module import BurstModule
 from modules.debug_module import Logger
 from modules.config_module import load_settings
 
@@ -29,11 +29,16 @@ def main():
     # Initialize logger
     logger = Logger()
 
+    # Write settings to output file
+    logger.tprint(config)
+
     # Build the dataframes for all tweets, creating
     # them from the data files if necessary and building
     # incrementally with new files.
-    tweet_df.MakeTweetDF()
-    #
+    tweet_df.MakeTweetDF(logger)
+
+    burst_module = BurstModule(logger)
+
     # define dictionaries for bursty tweet lists and zscore dfs
     for city in 'Chicago', 'Houston', 'LA':
         hist_filename = 'out/hist/{}_hist.pickle'.format(city)
@@ -105,7 +110,7 @@ def main():
         model = dim_module.GetTrainedModel(hist_mat.transpose(), approx_rank, 'NMF', config)
         logger.tprint('Model trained. Reconstruciton error: {}'.format(model.reconstruction_err_))
         #dim_module.GetAreaPlot(model, city)
-        topics = dim_module.GetTopics(model, 7, hist_df.index.values)
+        topics = dim_module.GetTopics(model, config['NGRAMS_PER_TOPIC'], hist_df.index.values)
         topics = sorted([ topics[key] for key in topics.keys() ], key=lambda x: x[0], reverse=True)
         logger.tprint(topics)
 

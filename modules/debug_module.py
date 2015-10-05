@@ -2,6 +2,7 @@ import time
 import random
 import os
 from modules.config_module import load_settings
+from modules.utils import rm
 
 class Logger:
     logfile_name = ''
@@ -9,18 +10,12 @@ class Logger:
 
     def __init__(self):
         config = load_settings()
-        topics = config['NUM_TOPICS']
-        beta = config['BETA']
-        self.logfile_name = 'out/logs/{}_{}.log'.format(topics, beta)
+        config_hash = hash(frozenset(config))
+        self.logfile_name = 'out/logs/{}.log'.format(config_hash)
         if not self.enabled:
-            try:
-                os.remove(self.logfile_name)
-            except:
-                pass
-            try:
-                os.symlink(self.logfile_name, 'current.log')
-            except:
-                pass
+            rm(self.logfile_name)
+            rm('current.log')
+            os.symlink(self.logfile_name, 'current.log')
             self.enabled = True
 
     def tprint(self, print_string):

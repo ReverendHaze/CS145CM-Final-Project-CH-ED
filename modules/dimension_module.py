@@ -7,7 +7,8 @@ import random
 
 def GetTrainedModel(data, rank, how, config):
     if how is 'NMF':
-        return NMF(n_components=rank, init='nndsvd', max_iter=500, nls_max_iter=500, tol=0.01, sparseness='data', beta=config['BETA']).fit(data)
+        print(config)
+        return NMF(n_components=rank, init='nndsvd', max_iter=500, nls_max_iter=500, tol=0.01, sparseness=config['SPARSENESS'], beta=config['BETA']).fit(data)
     elif how is 'PCA':
         return PCA(n_components=rank, copy=True, whiten=True).fit(data)
 
